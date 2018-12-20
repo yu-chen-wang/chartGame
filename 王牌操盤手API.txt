@@ -1,0 +1,27 @@
+
+闽笴栏魁㎝闽狝叭
+
+http://192.168.10.121/ChartGame/swagger/ui/index#/
+
+
+1.高拜ら戳琌安ら  false琌ユら  True琌安ら  ex: 20181231
+
+http://192.168.10.148/CmMannaWCF/IsHoliday?date8={yyyyMMdd}&ck=936DA01F-9ABD-4d9d-80C7-02AF85C822A8  
+
+
+2.高拜讽らTick  猔種:硂矗ㄑ琌だK 
+
+http://192.168.10.148/TickDbData/api/tick/get?time={yyyy/MM/dd}  ex: 2017/05/02
+
+琌穦ㄏノ逆  
+
+HighPr 程蔼基  
+LastPr Μ絃基  
+LowPr 程基  
+OpenPr 秨絃基  
+TotalQty 羆Θユ秖
+
+
+3.琎Μ基
+
+http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/20180503?type=json
