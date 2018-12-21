@@ -1,27 +1,30 @@
-
-Ãö©ó¹CÀ¸¬ö¿ı©M¬ÛÃöªA°È
+ï»¿
+é—œæ–¼éŠæˆ²ç´€éŒ„å’Œç›¸é—œæœå‹™
 
 http://192.168.10.121/ChartGame/swagger/ui/index#/
 
 
-1.¸ß°İ¤é´Á¬O§_¬°°²¤é  false¥Nªí¬O¥æ©ö¤é  True¥Nªí¬O°²¤é  ex: 20181231
+1.è©¢å•æ—¥æœŸæ˜¯å¦ç‚ºå‡æ—¥  falseä»£è¡¨æ˜¯äº¤æ˜“æ—¥  Trueä»£è¡¨æ˜¯å‡æ—¥  ex: 20181231
 
 http://192.168.10.148/CmMannaWCF/IsHoliday?date8={yyyyMMdd}&ck=936DA01F-9ABD-4d9d-80C7-02AF85C822A8  
 
 
-2.¸ß°İ·í¤éªºTick  ª`·N:³o­Ó´£¨Ñªº¬O¤ÀK 
+2.è©¢å•ç•¶æ—¥çš„Tick  æ³¨æ„:é€™å€‹æä¾›çš„æ˜¯åˆ†K 
 
 http://192.168.10.148/TickDbData/api/tick/get?time={yyyy/MM/dd}  ex: 2017/05/02
 
-¤U¦C¬O·|¨Ï¥Î¨ìªºÄæ¦ì  
+ä¸‹åˆ—æ˜¯æœƒä½¿ç”¨åˆ°çš„æ¬„ä½  
 
-HighPr ³Ì°ª»ù  
-LastPr ¦¬½L»ù  
-LowPr ³Ì§C»ù  
-OpenPr ¶}½L»ù  
-TotalQty Á`¦¨¥æ¶q
+HighPr æœ€é«˜åƒ¹  
+LastPr æ”¶ç›¤åƒ¹  
+LowPr æœ€ä½åƒ¹  
+OpenPr é–‹ç›¤åƒ¹  
+TotalQty ç¸½æˆäº¤é‡
+
+-----------------
+5MA è¿‘äº”ç­†æ”¶ç›¤åƒ¹å¹³å‡
 
 
-3.¬Q¦¬»ù
+3.æ˜¨æ”¶åƒ¹
 
 http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/20180503?type=json

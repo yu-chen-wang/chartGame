@@ -10,65 +10,62 @@
 
     <script src="scripts\jquery-3.3.1.min.js" type="text/javascript"></script>
 
+    <script src="scripts\highStock\highstock.js"></script>
+    <script src="scripts\highStock\modules\exporting.js"></script>
+    <!-- <script src="scripts\highStock\themes\dark-unica.js"></script> -->
+    <script src="scripts\highStock\modules\drag-panes.js"></script>
+
     <script>
         $(document).ready(function () {
 
-            //let url = 'http://192.168.10.148/CmMannaWCF/IsHoliday?date8=' + date + '&ck=936DA01F-9ABD-4d9d-80C7-02AF85C822A8';
-            let url = 'http://192.168.10.148/TickDbData/api/tick/get?time=2017/05/02';
+            // 遊戲資料日期 YYYY/MM/DD
+            let dataDate = getDataDate();
 
-            let dateIsHoliday = true;
+            let gameData = getTickData(dataDate);
 
-            let date = getRandomDate();
-            //console.log("date:", date);
+            let dateArray = dataDate.split('/');
 
-            // 確認日期是否為假日
-            $.ajax({
-                url: 'callApi.php',
-                type: 'GET',
-                data: { method: 'GET', url: 'http://192.168.10.148/CmMannaWCF/IsHoliday?date8=' + date + '&ck=936DA01F-9ABD-4d9d-80C7-02AF85C822A8', data: false },
-                error: function (error) {
-                    console.log(error);
-                },
-                success: function (result) {
-                    dateIsHoliday = result;
-                    console.log("dateIsHoliday:", dateIsHoliday);
-                    console.log(date);
-                    console.log(result);
+            // 昨收價日期 YYYYMMDD
+            let closePriceDate = dateArray[0] + dateArray[1] + dateArray[2];
+
+            // 昨收價
+            let ytdClosePrice = getYtdClosePrice(closePriceDate);
+
+            // console.log("date:", dataDate);
+            // console.log("game data:", gameData);
+            // console.log('ytd close price:', ytdClosePrice);
+
+            gameInit(dataDate, gameData, ytdClosePrice);
+
+            // 取得遊戲資料日期
+            // @return 日期 YYYYMMDD
+            function getDataDate() {
+                let dateIsHoliday = 'true';
+
+                while (dateIsHoliday === 'true') {
+
+                    let date = getRandomDate();
+                    let dateArray = date.split('/');
+                    let dateCheck = dateArray[0] + dateArray[1] + dateArray[2];
+
+                    dateIsHoliday = checkDate(dateCheck);
+                    //console.log("date is holiday:", dateIsHoliday);
 
                     if (dateIsHoliday === 'false') {
-                        getTickData();
+                        return date;
                     }
-
-
                 }
 
-            })
-
-            // 取得期貨資料
-            // @param date 欲取得期貨的日期
-            // @return 期貨資料
-            function getTickData(date) {
-                $.ajax({
-                    url: 'callApi.php',
-                    type: 'GET',
-                    data: { method: 'GET', url: 'http://192.168.10.148/TickDbData/api/tick/get?time=' + '2017/05/02', data: false },
-                    type: 'GET',
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (result) {
-                        let data = JSON.parse(result);
-
-                        console.log(data);
-                    }
-
-                })
             }
 
             // 取得亂數日期 從 2016 ~ 昨天 (當天還沒有期貨資料)
+            // @return Date YYYY/MM/DD
             function getRandomDate() {
                 let date = new Date();
+
+                // 亂數開始年分
                 let yearMin = 2016;
+
                 let yearMax = date.getFullYear();
                 let monthMin = 1;
                 let monthMax = 12;
@@ -99,16 +96,84 @@
                     day = '0' + day;
                 }
 
-                let result = year.toString() + month.toString() + day.toString();
-                //console.log(result);
+                let result = year.toString() + '/' + month.toString() + '/' + day.toString();
 
                 return result;
-
             }
 
+            // 檢查日期是否為假日
+            // @param date 要檢查的日期 YYYYMMDD
+            // @return true 假日 false 非假日
+            function checkDate(date) {
+                let result;
+
+                $.ajax({
+                    url: 'callApi.php',
+                    type: 'GET',
+                    async: false,
+                    data: { method: 'GET', url: 'http://192.168.10.148/CmMannaWCF/IsHoliday?date8=' + date + '&ck=936DA01F-9ABD-4d9d-80C7-02AF85C822A8', data: false },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    success: function (response) {
+                        result = response;
+                    }
+
+                })
+
+                return result;
+            }
+
+            // 取得期貨資料
+            // @param date 欲取得期貨的日期 YYYY/MM/DD
+            // @return object 期貨資料
+            function getTickData(date) {
+                let result;
+
+                $.ajax({
+                    url: 'callApi.php',
+                    type: 'GET',
+                    async: false,
+                    data: { method: 'GET', url: 'http://192.168.10.148/TickDbData/api/tick/get?time=' + date, data: false },
+                    type: 'GET',
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    success: function (response) {
+                        let data = JSON.parse(response);
+                        result = data;
+                    }
+                })
+
+                return result;
+            }
+
+            // 取得昨天收盤價
+            // @param date 取得日期 YYYYMMDD
+            // @return 昨收價
+            function getYtdClosePrice(date) {
+
+                let result;
+
+                $.ajax({
+                    url: 'callApi.php',
+                    type: 'GET',
+                    async: false,
+                    data: { method: 'GET', url: 'http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/' + date + '?type=json', data: false },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    success: function (response) {
+                        result = response;
+                    }
+                })
+
+                return result;
+            }
+
+
+
         });
-
-
 
 
     </script>
@@ -118,14 +183,584 @@
 
 <body>
 
+    <div id="container" style="width:100%; height:400px;"></div>
+
 
     <script>
+
+        function gameInit(dataDate, gameData, ytdClosePrice) {
+
+            console.log("date:", dataDate);
+            console.log("game data:", gameData);
+            console.log('ytd close price:', ytdClosePrice);
+
+            var data = new Array();
+            data =
+                [
+                    [
+                        1482417000000,
+                        116.35,
+                        116.51,
+                        115.64,
+                        116.29,
+                        26085900
+                    ],
+                    [
+                        1482503400000,
+                        115.59,
+                        116.52,
+                        115.59,
+                        116.52,
+                        14249500
+                    ],
+                    [
+                        1482849000000,
+                        116.52,
+                        117.8,
+                        116.49,
+                        117.26,
+                        18296900
+                    ],
+                    [
+                        1482935400000,
+                        117.52,
+                        118.02,
+                        116.2,
+                        116.76,
+                        20905900
+                    ],
+                    [
+                        1483021800000,
+                        116.45,
+                        117.11,
+                        116.4,
+                        116.73,
+                        15039500
+                    ],
+                    [
+                        1483108200000,
+                        116.65,
+                        117.2,
+                        115.43,
+                        115.82,
+                        30586300
+                    ],
+                    [
+                        1483453800000,
+                        115.8,
+                        116.33,
+                        114.76,
+                        116.15,
+                        28781900
+                    ],
+                    [
+                        1483540200000,
+                        115.85,
+                        116.51,
+                        115.75,
+                        116.02,
+                        21118100
+                    ],
+                    [
+                        1483626600000,
+                        115.92,
+                        116.86,
+                        115.81,
+                        116.61,
+                        22193600
+                    ],
+                    [
+                        1483713000000,
+                        116.78,
+                        118.16,
+                        116.47,
+                        117.91,
+                        31751900
+                    ],
+                    [
+                        1483972200000,
+                        117.95,
+                        119.43,
+                        117.94,
+                        118.99,
+                        33561900
+                    ],
+                    [
+                        1484058600000,
+                        118.77,
+                        119.38,
+                        118.3,
+                        119.11,
+                        24462100
+                    ],
+                    [
+                        1484145000000,
+                        118.74,
+                        119.93,
+                        118.6,
+                        119.75,
+                        27588600
+                    ],
+                    [
+                        1484231400000,
+                        118.9,
+                        119.3,
+                        118.21,
+                        119.25,
+                        27086200
+                    ],
+                    [
+                        1484317800000,
+                        119.11,
+                        119.62,
+                        118.81,
+                        119.04,
+                        26111900
+                    ],
+                    [
+                        1484663400000,
+                        118.34,
+                        120.24,
+                        118.22,
+                        120,
+                        34439800
+                    ],
+                    [
+                        1484749800000,
+                        120,
+                        120.5,
+                        119.71,
+                        119.99,
+                        23713000
+                    ],
+                    [
+                        1484836200000,
+                        119.4,
+                        120.09,
+                        119.37,
+                        119.78,
+                        25597300
+                    ],
+                    [
+                        1484922600000,
+                        120.45,
+                        120.45,
+                        119.73,
+                        120,
+                        32597900
+                    ],
+                    [
+                        1485181800000,
+                        120,
+                        120.81,
+                        119.77,
+                        120.08,
+                        22050200
+                    ],
+                    [
+                        1485268200000,
+                        119.55,
+                        120.1,
+                        119.5,
+                        119.97,
+                        23211000
+                    ],
+                    [
+                        1485354600000,
+                        120.42,
+                        122.1,
+                        120.28,
+                        121.88,
+                        32377600
+                    ],
+                    [
+                        1485441000000,
+                        121.67,
+                        122.44,
+                        121.6,
+                        121.94,
+                        26337600
+                    ],
+                    [
+                        1485527400000,
+                        122.14,
+                        122.35,
+                        121.6,
+                        121.95,
+                        20562900
+                    ],
+                    [
+                        1485786600000,
+                        120.93,
+                        121.63,
+                        120.66,
+                        121.63,
+                        30377500
+                    ],
+                    [
+                        1485873000000,
+                        121.15,
+                        121.39,
+                        120.62,
+                        121.35,
+                        49201000
+                    ],
+                    [
+                        1485959400000,
+                        127.03,
+                        130.49,
+                        127.01,
+                        128.75,
+                        111985000
+                    ],
+                    [
+                        1486045800000,
+                        127.98,
+                        129.39,
+                        127.78,
+                        128.53,
+                        33710400
+                    ],
+                    [
+                        1486132200000,
+                        128.31,
+                        129.19,
+                        128.16,
+                        129.08,
+                        24507300
+                    ],
+                    [
+                        1486391400000,
+                        129.13,
+                        130.5,
+                        128.9,
+                        130.29,
+                        26845900
+                    ],
+                    [
+                        1486477800000,
+                        130.54,
+                        132.09,
+                        130.45,
+                        131.53,
+                        38183800
+                    ],
+                    [
+                        1486564200000,
+                        131.35,
+                        132.22,
+                        131.22,
+                        132.04,
+                        23004100
+                    ],
+                    [
+                        1486650600000,
+                        131.65,
+                        132.45,
+                        131.12,
+                        132.42,
+                        28349900
+                    ],
+                    [
+                        1486737000000,
+                        132.46,
+                        132.94,
+                        132.05,
+                        132.12,
+                        20065500
+                    ],
+                    [
+                        1486996200000,
+                        133.08,
+                        133.82,
+                        132.75,
+                        133.29,
+                        23035400
+                    ],
+                    [
+                        1487082600000,
+                        133.47,
+                        135.09,
+                        133.25,
+                        135.02,
+                        33226200
+                    ],
+                    [
+                        1487169000000,
+                        135.52,
+                        136.27,
+                        134.62,
+                        135.51,
+                        35623100
+                    ],
+                    [
+                        1487255400000,
+                        135.67,
+                        135.9,
+                        134.84,
+                        135.35,
+                        22584600
+                    ],
+                    [
+                        1487341800000,
+                        135.1,
+                        135.83,
+                        135.1,
+                        135.72,
+                        22198200
+                    ],
+                    [
+                        1487687400000,
+                        136.23,
+                        136.75,
+                        135.98,
+                        136.7,
+                        24507200
+                    ],
+                    [
+                        1487773800000,
+                        136.43,
+                        137.12,
+                        136.11,
+                        137.11,
+                        20836900
+                    ],
+                    [
+                        1487860200000,
+                        137.38,
+                        137.48,
+                        136.3,
+                        136.53,
+                        20788200
+                    ],
+                    [
+                        1487946600000,
+                        135.91,
+                        136.66,
+                        135.28,
+                        136.66,
+                        21776600
+                    ],
+                    [
+                        1488205800000,
+                        137.14,
+                        137.44,
+                        136.28,
+                        136.93,
+                        20257400
+                    ],
+                    [
+                        1488292200000,
+                        137.08,
+                        137.44,
+                        136.7,
+                        136.99,
+                        23482900
+                    ],
+                    [
+                        1488378600000,
+                        137.89,
+                        140.15,
+                        137.6,
+                        139.79,
+                        36414600
+                    ],
+                    [
+                        1488465000000,
+                        140,
+                        140.28,
+                        138.76,
+                        138.96,
+                        26211000
+                    ],
+                    [
+                        1488551400000,
+                        138.78,
+                        139.83,
+                        138.59,
+                        139.78,
+                        21108100
+                    ],
+                    [
+                        1488810600000,
+                        139.37,
+                        139.77,
+                        138.6,
+                        139.34,
+                        21750000
+                    ],
+                    [
+                        1488897000000,
+                        139.06,
+                        139.98,
+                        138.79,
+                        139.52,
+                        17446300
+                    ],
+                    [
+                        1488983400000,
+                        138.95,
+                        139.8,
+                        138.82,
+                        139,
+                        18707200
+                    ],
+                    [
+                        1489069800000,
+                        138.74,
+                        138.79,
+                        137.05,
+                        138.68,
+                        22155900
+                    ],
+                    [
+                        1489156200000,
+                        139.25,
+                        139.36,
+                        138.64,
+                        139.14,
+                        19612800
+                    ],
+                    [
+                        1489411800000,
+                        138.85,
+                        139.43,
+                        138.82,
+                        139.2,
+                        17421700
+                    ],
+                    [
+                        1489498200000,
+                        139.3,
+                        139.65,
+                        138.84,
+                        138.99,
+                        15309100
+                    ],];
+
+
+            // split the data set into ohlc and volume
+            var ohlc = [],
+                volume = [],
+                dataLength = data.length,
+                // set the allowed units for data grouping
+                groupingUnits = [[
+                    'week',                         // unit name
+                    [1]                             // allowed multiples
+                ], [
+                    'month',
+                    [1, 2, 3, 4, 6]
+                ]],
+
+                i = 0;
+
+            for (i; i < dataLength; i += 1) {
+                ohlc.push([
+                    data[i][0], // the date
+                    data[i][1], // open
+                    data[i][2], // high
+                    data[i][3], // low
+                    data[i][4] // close
+                ]);
+
+                volume.push([
+                    data[i][0], // the date
+                    data[i][5] // the volume
+                ]);
+            }
+
+
+            // create the chart
+            Highcharts.stockChart('container', {
+
+                rangeSelector: {
+                    selected: 1
+                },
+
+                rangeSelector: {
+                    enabled: false
+                },
+
+                // title: {
+                //     text: 'AAPL Historical'
+                // },
+
+                yAxis: [{
+                    labels: {
+                        align: 'right',
+                        x: -3
+                    },
+                    title: {
+                        text: 'OHLC'
+                    },
+                    height: '60%',
+                    lineWidth: 2,
+                    resize: {
+                        enabled: true
+                    }
+                }, {
+                    labels: {
+                        align: 'right',
+                        x: -3
+                    },
+                    title: {
+                        text: 'Volume'
+                    },
+                    top: '65%',
+                    height: '35%',
+                    offset: 0,
+                    lineWidth: 2
+                }],
+
+                tooltip: {
+                    split: true
+                },
+
+                series: [{
+                    type: 'candlestick',
+                    name: 'AAPL',
+                    data: ohlc,
+                    dataGrouping: {
+                        units: groupingUnits
+                    }
+                }, {
+                    type: 'column',
+                    name: 'Volume',
+                    data: volume,
+                    yAxis: 1,
+                    dataGrouping: {
+                        units: groupingUnits
+                    }
+                }],
+                exporting: {
+                    buttons: {
+                        buyButton: {
+                            x: 0,
+                            y: 330,
+                            onclick: function () {
+                                alert('買');
+                            },
+                            text: '買'
+                        },
+                        sellButton: {
+                            x: 0,
+                            y: 300,
+                            onclick: function () {
+                                alert('賣');
+                            },
+                            text: '賣'
+                        }
+                    }
+                }
+
+
+            });
+
+        }
 
 
 
     </script>
-
-
 
 
 
