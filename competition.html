@@ -64,13 +64,13 @@
 
             }
 
-            // 取得亂數日期 從 2016 ~ 昨天 (當天還沒有期貨資料)
+            // 取得亂數日期 從 2012 ~ 昨天 (當天還沒有期貨資料)
             // @return Date YYYY/MM/DD
             function getRandomDate() {
                 let date = new Date();
 
                 // 亂數開始年分
-                let yearMin = 2016;
+                let yearMin = 2012;
 
                 let yearMax = date.getFullYear();
                 let monthMin = 1;
@@ -189,13 +189,29 @@
 
 <body>
 
+    <!-- 遊戲資訊 -->
+    <div id="gameInfo" style="width:100%; height: 300px">
+        <span style="display: inline-block">遊戲狀況 平手</span>
+        <img href="" id="p1Img" style="display: inline-block">P1 Img</img>
+        <span id="p1Name">P1 name</span>
+        <span id="p1Profit">累積損益 </span>
+        <span id="p1Profit">持有部位 </span>
+
+        <img href="" id="p2Img" style="display: inline-block">P2 Img</img>
+        <span id="p2Name">P2 name</span>
+        <span id="p2Profit">累積損益 </span>
+        <span id="p2Profit">持有部位 </span>
+
+        <span>倒數</span>
+        <span id="countDown">65</span>
+        <span>秒</span>
+    </div>
+
+    <!-- 遊戲圖表 -->
     <div id="gameChart" style="width:100%; height:600px;"></div>
 
 
     <script>
-
-
-
 
         // 創建遊戲圖表
         // @param dataDate 遊戲資料日期
@@ -226,72 +242,128 @@
             let lastPrMax = data.KChartTickList[0].LastPr;
             let lastPrMin = data.KChartTickList[0].LastPr;
 
+
             // 轉換時區
             let timezoneSet = Math.abs(date.getTimezoneOffset() / 60) * 60 * 60 * 1000;
 
-
-            for (let i = 0; i < data.KChartTickList.length; i++) {
-
-                // if (i < 15) {
-                //     pushData();
-                // }
-
-                // if (i == 15) {
-                //     setInterval(pushData, 5000);
-                // }
-
-                // function pushData() {
-                    // 最高收盤價
-                    if (data.KChartTickList[i].LastPr > lastPrMax) {
-                        lastPrMax = data.KChartTickList[i].LastPr;
-                    }
-
-                    // 最低收盤價
-                    if (data.KChartTickList[i].LastPr < lastPrMin) {
-                        lastPrMin = data.KChartTickList[i].LastPr;
-                    }
-
-                    time = data.KChartTickList[i].kTickTime;
-
-                    ohlc.push([
-                        new Date(time).getTime() + timezoneSet,     // 時間
-                        data.KChartTickList[i].OpenPr,              // 開盤價
-                        data.KChartTickList[i].HighPr,              // 最高價
-                        data.KChartTickList[i].LowPr,               // 最低價
-                        data.KChartTickList[i].LastPr               // 收盤價
-                    ]);
-
-                    let isHigher = data.KChartTickList[i].OpenPr > data.KChartTickList[i].LastPr;
-                    let isSame = data.KChartTickList[i].OpenPr == data.KChartTickList[i].LastPr;
-
-                    // 漲
-                    if (isHigher) {
-                        qtyColor = '#FF0000';
-                    }
-                    // 跌
-                    else {
-                        qtyColor = '#00DD00';
-                    }
-                    // 開盤 == 收盤
-                    if (isSame) {
-                        qtyColor = '#888888';
-                    }
-
-                    totalQty.push({
-                        x: new Date(time).getTime() + timezoneSet, // 時間
-                        y: data.KChartTickList[i].TotalQty,        // 成交量
-                        color: qtyColor
-                    });
+            // x軸最小值
+            let minXaxis = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet;
+            // let minXaxis = 1545641100000 + timezoneSet;
 
 
+            // x軸最大值 
+            let maxXaxis = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet + 1200000;
+            // let maxXaxis = 1545641100000 + timezoneSet + 1800000;
 
-                    // console.log(ohlc);
-                    //  console.log(totalQty);
+            let startTime = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet;
 
-                // }
+            let endTime;
 
+            for (let i = 0; i < 20; i++) {
+
+                // 最高收盤價
+                if (data.KChartTickList[i].LastPr > lastPrMax) {
+                    lastPrMax = data.KChartTickList[i].LastPr;
+                }
+
+                // 最低收盤價
+                if (data.KChartTickList[i].LastPr < lastPrMin) {
+                    lastPrMin = data.KChartTickList[i].LastPr;
+                }
+
+                time = data.KChartTickList[i].kTickTime;
+
+                ohlc.push([
+                    new Date(time).getTime() + timezoneSet,     // 時間
+                    data.KChartTickList[i].OpenPr,              // 開盤價
+                    data.KChartTickList[i].HighPr,              // 最高價
+                    data.KChartTickList[i].LowPr,               // 最低價
+                    data.KChartTickList[i].LastPr               // 收盤價
+                ]);
+
+                let isHigher = data.KChartTickList[i].OpenPr > data.KChartTickList[i].LastPr;
+                let isSame = data.KChartTickList[i].OpenPr == data.KChartTickList[i].LastPr;
+
+                // 漲
+                if (isHigher) {
+                    qtyColor = '#FF0000';
+                }
+                // 跌
+                else {
+                    qtyColor = '#00DD00';
+                }
+                // 開盤 == 收盤
+                if (isSame) {
+                    qtyColor = '#888888';
+                }
+
+                totalQty.push({
+                    x: new Date(time).getTime() + timezoneSet, // 時間
+                    y: data.KChartTickList[i].TotalQty,        // 成交量
+                    color: qtyColor
+                });
+            }
+
+
+
+            var gameThread = setInterval(pushData, 1000);
+            let i = 20;
+            // 每秒新增一筆資料
+            function pushData() {
+
+                // console.log("tickTime:", i);
+
+                if (i == 110) {
+                    clearInterval(gameThread);
+                }
+
+                // 最高收盤價
+                if (data.KChartTickList[i].LastPr > lastPrMax) {
+                    lastPrMax = data.KChartTickList[i].LastPr;
+                }
+
+                // 最低收盤價
+                if (data.KChartTickList[i].LastPr < lastPrMin) {
+                    lastPrMin = data.KChartTickList[i].LastPr;
+                }
+
+                time = data.KChartTickList[i].kTickTime;
+
+                ohlc.push([
+                    new Date(time).getTime() + timezoneSet,     // 時間
+                    data.KChartTickList[i].OpenPr,              // 開盤價
+                    data.KChartTickList[i].HighPr,              // 最高價
+                    data.KChartTickList[i].LowPr,               // 最低價
+                    data.KChartTickList[i].LastPr               // 收盤價
+                ]);
+
+                let isHigher = data.KChartTickList[i].OpenPr > data.KChartTickList[i].LastPr;
+                let isSame = data.KChartTickList[i].OpenPr == data.KChartTickList[i].LastPr;
+
+                // 漲
+                if (isHigher) {
+                    qtyColor = '#FF0000';
+                }
+                // 跌
+                else {
+                    qtyColor = '#00DD00';
+                }
+                // 開盤 == 收盤
+                if (isSame) {
+                    qtyColor = '#888888';
+                }
+
+                totalQty.push({
+                    x: new Date(time).getTime() + timezoneSet, // 時間
+                    y: data.KChartTickList[i].TotalQty,        // 成交量
+                    color: qtyColor
+                });
+
+
+                i++;
 
             }
+
 
             // create the chart
             let chart = Highcharts.stockChart('gameChart', {
@@ -300,25 +372,35 @@
                     events: {
                         load: function () {
                             // set up the updating of the chart each second
-                            setInterval(function () {
+                            let chartInterval = setInterval(function () {
+                                // console.log(ohlc);
+                                chart.series[0].setData(ohlc, true);
+                                chart.series[1].setData(totalQty, true);
 
-                                // chart.series[1].setData(totalQty);
+                                let xEnd = ohlc.length;
+                                let xStart = xEnd - 21;
+
+                                // console.log("收盤價:", chart.series[0].yData[i - 1][3]);
+
+                                chart.xAxis[0].setExtremes(ohlc[xStart][0], ohlc[xEnd - 1][0]);
+
+                                if (xEnd == 111) {
+                                    clearInterval(chartInterval);
+                                }
                             }, 1000);
                         }
                     }
                 },
 
                 rangeSelector: {
-                    selected: 1
-                },
-
-                rangeSelector: {
+                    selected: 1,
+                    // selected: 0,
                     enabled: false
                 },
 
-                // navigator: {
-                //     enabled: false
-                // },
+                navigator: {
+                    // enabled: false
+                },
 
                 // title: {
                 //     text: 'AAPL Historical'
@@ -344,15 +426,18 @@
                     labels: {
                         enabled: false
                     },
-                    range: 6 * 30 * 24 * 400
+                    // range: 40 * 60 * 1000,
+                    min: minXaxis,
+                    max: maxXaxis,
+                    // minRange: 1000 * 60 * 1000
                 },
 
                 yAxis: [{
                     // y軸 max
-                    max: lastPrMax + 15,
+                    max: lastPrMax + 100,
 
                     // y軸 min
-                    min: lastPrMin - 15,
+                    min: lastPrMin - 100,
 
                     labels: {
                         align: 'right',
@@ -372,13 +457,13 @@
                     plotLines: [{
                         color: '#00BBFF',
                         value: ytdClosePrice,
-                        width: 2
+                        width: 2,
                     }],
                 }, {
                     labels: {
                         align: 'right',
                         x: -3,
-                        // enabled: false
+                        enabled: false
                     },
                     title: {
                         text: '成交量',
@@ -405,9 +490,6 @@
                     pointRange: 100000,
                     // pointWidth: 50,
                     gapSize: 20
-                    // dataGrouping: {
-                    //     units: groupingUnits
-                    // }
                 }, {
                     type: 'column',
                     name: '成交量',
@@ -416,9 +498,6 @@
                     showInLegend: false,
                     pointRange: 100000,
                     // pointWidth: 50,
-                    // dataGrouping: {
-                    //     units: groupingUnits
-                    // }
                 }, {
                     name: "5MA",
                     linkedTo: "ohlc",
