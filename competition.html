@@ -57,6 +57,7 @@
                     dateIsHoliday = checkDate(dateCheck);
                     //console.log("date is holiday:", dateIsHoliday);
 
+                    // 不是假日
                     if (dateIsHoliday === 'false') {
                         return date;
                     }
@@ -191,27 +192,104 @@
 
     <!-- 遊戲資訊 -->
     <div id="gameInfo" style="width:100%; height: 300px">
-        <span style="display: inline-block">遊戲狀況 平手</span>
-        <img href="" id="p1Img" style="display: inline-block">P1 Img</img>
-        <span id="p1Name">P1 name</span>
-        <span id="p1Profit">累積損益 </span>
-        <span id="p1Profit">持有部位 </span>
+        <div>
+            <span id="gameStatus">遊戲狀況 平手</span>
+        </div>
+        <br>
 
-        <img href="" id="p2Img" style="display: inline-block">P2 Img</img>
-        <span id="p2Name">P2 name</span>
-        <span id="p2Profit">累積損益 </span>
-        <span id="p2Profit">持有部位 </span>
+        <div>
+            <img href="" id="p1Img">P1 Img</img>
+            <p id="p1Name">P1 Name</p>
+            <p>累積損益 <span id="p1Profit"> -- </span></p>
+            <p>持有部位 <span id="p1Lot"> -- </span></p>
+        </div>
+        <br>
+
+        <div>
+            <img href="" id="p2Img">P2 Img</img>
+            <p id="p2Name">P2 Name</p>
+            <p>累積損益 <span id="p2Profit"> -- </span></p>
+            <p>持有部位 <span id="p2Lot"> -- </span></p>
+        </div>
+        <br>
 
         <span>倒數</span>
-        <span id="countDown">65</span>
+        <span id="countDown" style="font-size:20px">90</span>
         <span>秒</span>
+        <br>
+
+        <input id="sellBtn" type="button" value="賣">
+        <input id="buyBtn" type="button" value="買">
+
+
     </div>
 
     <!-- 遊戲圖表 -->
-    <div id="gameChart" style="width:100%; height:600px;"></div>
+    <div id="gameChart" style="width:80%; height:600px; margin: auto"></div>
 
 
     <script>
+
+        // 玩家持有口數、累積損益、及時損益(未成交)、最近的 tickTime
+        let p1Status = {
+            lot: 0,
+            Profit: 0,
+            lastTick: 0
+        }
+
+        let p2Status = {
+            lot: 0,
+            Profit: 0,
+            lastTick: 0
+        }
+
+        // 玩家1 交易紀錄
+        let p1TradeDetail = initPlayer();
+
+        console.log(p1TradeDetail);
+
+        // 玩家2 交易紀錄
+        let p2TradeDetail = initPlayer();
+
+        let countDown = 15;
+        // 遊戲倒數
+        let countDownThread = setInterval(function () {
+            countDown--;
+            $('#countDown').text(countDown);
+
+            if (countDown == 0) {
+                clearInterval(countDownThread);
+            }
+
+        }, 1000);
+
+
+        // 創建 player object
+        // return player
+        function initPlayer() {
+            let player = {
+                tradeHistory: [
+
+                ],
+                tradeResult: {
+                    GameID: 0,
+                    PlayerID: 0,
+                    GainMoneySum: 0,
+                    LossMoneySum: 0,
+                    GainLotSum: 0,
+                    LossLotSum: 0,
+                    OLotSum: 0,
+                    MaxAheadMoney: 0,
+                    MaxBehindMoney: 0,
+                    MaxGainLotMoney: 0,
+                    MaxLossLotMoney: 0
+                }
+
+            }
+
+            return player;
+        }
+
 
         // 創建遊戲圖表
         // @param dataDate 遊戲資料日期
@@ -222,6 +300,38 @@
             console.log("date:", dataDate);
             console.log("data:", data);
             console.log('昨收價:', ytdClosePrice);
+
+
+            // 遊戲紀錄
+            let gameDetail = initGameDetail();
+
+
+            // 創建遊戲資訊
+            // return gameDetail
+            function initGameDetail() {
+
+                let d = new Date();
+
+                let timezoneSet = Math.abs(d.getTimezoneOffset() / 60) * 60 * 60 * 1000;
+                let now = new Date(d.getTime() + timezoneSet).toISOString();
+
+                let gameDetail = {
+                    GameID: 0,
+                    GameDate: now,
+                    TradeDate: dataDate,
+                    P1PlayerID: 0,
+                    P2PlayerID: 0,
+                    P1Profit: 0,
+                    P2Profit: 0,
+                    GameSpeed: 1,
+                    GameFee: 0,
+                    GameMaxLot: 1,
+                    HasP1Finish: true,
+                    HasP2Finish: true
+                }
+
+                return gameDetail;
+            }
 
             // dateDate = "2018/09/07";
             // ytdClosePrice = 10900;
@@ -248,72 +358,71 @@
 
             // x軸最小值
             let minXaxis = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet;
-            // let minXaxis = 1545641100000 + timezoneSet;
-
 
             // x軸最大值 
             let maxXaxis = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet + 1200000;
-            // let maxXaxis = 1545641100000 + timezoneSet + 1800000;
 
-            let startTime = new Date(data.KChartTickList[0].kTickTime).getTime() + timezoneSet;
 
-            let endTime;
+            // 遊戲開始前先載入20筆資料
+            for (let i = 0; i < 120; i++) {
 
-            for (let i = 0; i < 20; i++) {
-
-                // 最高收盤價
-                if (data.KChartTickList[i].LastPr > lastPrMax) {
-                    lastPrMax = data.KChartTickList[i].LastPr;
+                // 最高價
+                if (data.KChartTickList[i].HighPr > lastPrMax) {
+                    lastPrMax = data.KChartTickList[i].HighPr;
                 }
 
-                // 最低收盤價
-                if (data.KChartTickList[i].LastPr < lastPrMin) {
-                    lastPrMin = data.KChartTickList[i].LastPr;
+                // 最低價
+                if (data.KChartTickList[i].LowPr < lastPrMin) {
+                    lastPrMin = data.KChartTickList[i].LowPr;
                 }
 
-                time = data.KChartTickList[i].kTickTime;
+                if (i < 20) {
+                    time = data.KChartTickList[i].kTickTime;
 
-                ohlc.push([
-                    new Date(time).getTime() + timezoneSet,     // 時間
-                    data.KChartTickList[i].OpenPr,              // 開盤價
-                    data.KChartTickList[i].HighPr,              // 最高價
-                    data.KChartTickList[i].LowPr,               // 最低價
-                    data.KChartTickList[i].LastPr               // 收盤價
-                ]);
+                    ohlc.push([
+                        new Date(time).getTime() + timezoneSet,     // 時間
+                        data.KChartTickList[i].OpenPr,              // 開盤價
+                        data.KChartTickList[i].HighPr,              // 最高價
+                        data.KChartTickList[i].LowPr,               // 最低價
+                        data.KChartTickList[i].LastPr               // 收盤價
+                    ]);
 
-                let isHigher = data.KChartTickList[i].OpenPr > data.KChartTickList[i].LastPr;
-                let isSame = data.KChartTickList[i].OpenPr == data.KChartTickList[i].LastPr;
+                    let isHigher = data.KChartTickList[i].OpenPr > data.KChartTickList[i].LastPr;
+                    let isSame = data.KChartTickList[i].OpenPr == data.KChartTickList[i].LastPr;
 
-                // 漲
-                if (isHigher) {
-                    qtyColor = '#FF0000';
+                    // 漲
+                    if (isHigher) {
+                        qtyColor = '#FF0000';
+                    }
+                    // 跌
+                    else {
+                        qtyColor = '#00DD00';
+                    }
+                    // 開盤 == 收盤
+                    if (isSame) {
+                        qtyColor = '#888888';
+                    }
+
+                    // 成交量
+                    totalQty.push({
+                        x: new Date(time).getTime() + timezoneSet, // 時間
+                        y: data.KChartTickList[i].TotalQty,        // 成交量
+                        color: qtyColor
+                    });
                 }
-                // 跌
-                else {
-                    qtyColor = '#00DD00';
-                }
-                // 開盤 == 收盤
-                if (isSame) {
-                    qtyColor = '#888888';
-                }
 
-                totalQty.push({
-                    x: new Date(time).getTime() + timezoneSet, // 時間
-                    y: data.KChartTickList[i].TotalQty,        // 成交量
-                    color: qtyColor
-                });
             }
 
 
+            // 開始 timeTick
+            let i = 19;
 
-            var gameThread = setInterval(pushData, 1000);
-            let i = 20;
-            // 每秒新增一筆資料
-            function pushData() {
+            // 遊戲開始 每秒新增一筆資料
+            let gameThread = setInterval(function () {
+                i++;
 
-                // console.log("tickTime:", i);
-
-                if (i == 110) {
+                // 遊戲結束
+                if (countDown == 0) {
                     clearInterval(gameThread);
                 }
 
@@ -359,10 +468,131 @@
                     color: qtyColor
                 });
 
+            }, 1000);
 
-                i++;
+            // 處理單口損益
+            function setTrade(trade) {
 
+                let lastTick = p1Status.lastTick;
+
+                let deal;
+
+                if (trade === "sell") {
+                    deal = data.KChartTickList[i].LastPr - data.KChartTickList[lastTick].LastPr;
+                }
+                else {
+                    deal = data.KChartTickList[lastTick].LastPr - data.KChartTickList[i].LastPr;
+                }
+
+                console.log("deal:", deal);
+
+                p1Status.Profit += deal;
+
+                // 賺
+                if (deal > 0) {
+                    p1TradeDetail.tradeResult.GainLotSum++;
+
+                    // 總獲利
+                    if (deal > p1TradeDetail.tradeResult.GainMoneySum) {
+                        p1TradeDetail.tradeResult.GainMoneySum += deal;
+                    }
+
+                    // 單口賺最多
+                    if (deal > p1TradeDetail.tradeResult.MaxGainLotMoney) {
+                        p1TradeDetail.tradeResult.MaxGainLotMoney = deal;
+                    }
+
+                }
+
+                // 賠
+                else if (deal < 0) {
+                    p1TradeDetail.tradeResult.LossLotSum++;
+
+                    // 總負債
+                    if (deal < p1TradeDetail.tradeResult.LossMoneySum) {
+                        p1TradeDetail.tradeResult.LossMoneySum += deal;
+                    }
+
+                    // 單口賠最多
+                    if (deal < p1TradeDetail.tradeResult.MaxLossLotMoney) {
+                        p1TradeDetail.tradeResult.MaxLossLotMoney = deal;
+                    }
+
+                }
+
+                // 買 = 賣
+                else {
+                    p1TradeDetail.tradeResult.OLotSum++;
+                }
             }
+
+
+            // 賣
+            $("#sellBtn").click(function () {
+
+                p1Status.lot -= 1;
+
+                $("#p1Lot").text(p1Status.lot);
+
+                // 先買再賣
+                if (p1Status.lot == 0) {
+                    $("#buyBtn").prop('disabled', false);
+
+                    setTrade("sell");
+                }
+
+                if (p1Status.lot == -1) {
+                    $("#sellBtn").prop('disabled', true);
+                }
+
+                p1TradeDetail.tradeHistory.push(
+                    {
+                        GameID: 0,
+                        PlayerID: 0,
+                        TradeTick: i,
+                        TradeAmount: -1
+                    }
+                )
+
+                p1Status.lastTick = i;
+
+                // console.log(p1Status);
+
+            });
+
+            // 買
+            $("#buyBtn").click(function () {
+                p1Status.lot += 1;
+
+                $("#p1Lot").text(p1Status.lot);
+
+                // 先賣再買
+                if (p1Status.lot == 0) {
+                    $("#sellBtn").prop('disabled', false);
+
+                    setTrade("buy");
+                }
+
+                if (p1Status.lot == 1) {
+                    $("#buyBtn").prop('disabled', true);
+                }
+
+                p1TradeDetail.tradeHistory.push(
+                    {
+                        GameID: 0,
+                        PlayerID: 0,
+                        TradeTick: i,
+                        TradeAmount: 1
+                    }
+                )
+
+                p1Status.lastTick = i;
+
+                // console.log(p1Status);
+
+            });
+
+
 
 
             // create the chart
@@ -373,20 +603,67 @@
                         load: function () {
                             // set up the updating of the chart each second
                             let chartInterval = setInterval(function () {
-                                // console.log(ohlc);
-                                chart.series[0].setData(ohlc, true);
-                                chart.series[1].setData(totalQty, true);
+
+                                chart.series[0].setData(ohlc);
+                                chart.series[1].setData(totalQty);
 
                                 let xEnd = ohlc.length;
                                 let xStart = xEnd - 21;
 
-                                // console.log("收盤價:", chart.series[0].yData[i - 1][3]);
-
+                                // 調整圖表 x軸 頭尾
                                 chart.xAxis[0].setExtremes(ohlc[xStart][0], ohlc[xEnd - 1][0]);
 
-                                if (xEnd == 111) {
+
+                                // 計算 P1 及時累積損益(未完成交易) 先賣再買
+                                if (p1Status.lot == -1) {
+                                    let p1Profit = p1Status.Profit + data.KChartTickList[p1Status.lastTick].LastPr - data.KChartTickList[i].LastPr;
+
+                                    $("#p1Profit").text(p1Profit);
+                                }
+
+                                // 計算 P1 及時累積損益(未完成交易) 先買再賣
+                                if (p1Status.lot == 1) {
+                                    let p1Profit = p1Status.Profit + data.KChartTickList[i].LastPr - data.KChartTickList[p1Status.lastTick].LastPr;
+
+                                    $("#p1Profit").text(p1Profit);
+                                }
+
+
+                                // 遊戲結束
+                                if (countDown == 0) {
+                                    console.log("遊戲結束");
+
+                                    $("#buyBtn").prop("disabled", true);
+                                    $("#sellBtn").prop("disabled", true);
+
+                                    // 處理未交易完成 先賣再買
+                                    if (p1Status.lot == -1) {
+                                        p1Status.Profit += data.KChartTickList[p1Status.lastTick].LastPr - data.KChartTickList[i].LastPr;
+
+                                        setTrade("buy");
+
+                                        $("#p1Profit").text(p1Profit.Profit);
+
+                                        // $("#p2Profit").text();
+                                    }
+
+                                    // 先買再賣
+                                    if (p1Status.lot == 1) {
+                                        p1Status.Profit += data.KChartTickList[i].LastPr - data.KChartTickList[p1Status.lastTick].LastPr;
+
+                                        setTrade("sell");
+
+                                        $("#p1Profit").text(p1Profit.Profit);
+                                    }
+
+                                    
+
+                                    console.log("結束:", p1Status);
+                                    console.log(p1TradeDetail);
+
                                     clearInterval(chartInterval);
                                 }
+
                             }, 1000);
                         }
                     }
@@ -417,8 +694,8 @@
 
                 plotOptions: {
                     candlestick: {
-                        color: '#FF0000',
-                        upColor: '#00DD00'
+                        color: '#00DD00',
+                        upColor: '#FF0000'
                     },
                 },
 
@@ -434,10 +711,10 @@
 
                 yAxis: [{
                     // y軸 max
-                    max: lastPrMax + 100,
+                    max: lastPrMax + 20,
 
                     // y軸 min
-                    min: lastPrMin - 100,
+                    min: lastPrMin - 20,
 
                     labels: {
                         align: 'right',
@@ -512,22 +789,43 @@
                 }],
                 exporting: {
                     buttons: {
-                        buyButton: {
-                            x: 0,
-                            y: 330,
-                            onclick: function () {
-                                alert('買');
-                            },
-                            text: '買'
+                        contextButton: {
+                            enabled: false
                         },
-                        sellButton: {
-                            x: 0,
-                            y: 300,
-                            onclick: function () {
-                                alert('賣');
-                            },
-                            text: '賣'
-                        }
+                        // buyButton: {
+                        //     x: 0,
+                        //     y: 330,
+                        //     // onclick: buyLot,
+                        //     text: '買',
+                        //     theme: {
+                        //         fill: "white"
+                        //     }
+                        // },
+                        // sellButton: {
+                        //     x: 0,
+                        //     y: 300,
+                        //     onclick: function () {
+
+                        //         player1.lotCount -= 1;
+
+                        //         player1.tradeHistory.push(
+                        //             {
+                        //                 GameID: 0,
+                        //                 PlayerID: 0,
+                        //                 TradeTick: i,
+                        //                 TradeAmount: -1
+                        //             }
+                        //         );
+
+                        //         console.log(player1);
+
+                        //         alert('賣');
+                        //     },
+                        //     text: '賣',
+                        //     theme: {
+                        //         fill: "white"
+                        //     }
+                        // }
                     }
                 }
 
