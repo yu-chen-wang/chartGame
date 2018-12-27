@@ -28,3 +28,7 @@ TotalQty 總成交量
 3.昨收價
 
 http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/20180503?type=json
+
+
+機器人 ID 666
+機器人圖片 http://www.cmoney.tw/follow/images/head-icons/a24.gif
