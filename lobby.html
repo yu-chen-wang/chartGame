@@ -7,6 +7,15 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>大廳</title>
 
+    <style>
+
+        table tr td{
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    
+    </style>
+
     <!-- jquery -->
     <script src="scripts\jquery-3.3.1.min.js" type="text/javascript"></script>
 
@@ -25,6 +34,7 @@
             $("#userName").text(nickName);
 
             let winData = getWinData(playerID);
+            console.log(winData);
 
             let winRate = (winData.TotalWinGame / (winData.TotalFailGame + winData.TotalWinGame + winData.TotalDrawGame) * 100).toFixed(1) + " %";
 
@@ -108,6 +118,7 @@
                         p2profit = 0;
                     }
 
+
                     // 損益差
                     let profit = p1profit - p2profit;
 
@@ -117,7 +128,7 @@
                     let hours = d.getHours();
                     let minutes = d.getMinutes()
 
-                    if(minutes < 10){
+                    if (minutes < 10) {
                         minutes = "0" + minutes;
                     }
 
@@ -134,13 +145,19 @@
                         result = "平手";
                     }
 
-                    let line = "<tr onclick(toGameResult(" + gameid + "))>" +
+                    // 未完賽
+                    if (data[i].HasP1Finish == false) {
+                        result = "未完賽 " + result;
+                    }
+
+                    let line = "<tr onclick=(toGameResult(" + gameid + "))>" +
                         "<td>" + result + "</td>" +
                         "<td>" + profit + "</td>" +
                         "<td>" + p1profit + "</td>" +
                         "<td>" + p2profit + "</td>" +
                         "<td>" + time + "</td>" +
                         "</tr>";
+
                     $('#gameRecord > tbody:last-child').append(line);
                 }
 
@@ -148,13 +165,7 @@
             }
 
 
-            // 點選對戰紀錄
-            function toGameResult(gameID) {
-                console.log("gameID:", gameID);
 
-                // 儲存點選紀錄之 GameID 供 gameResult 頁接 API
-                setCookie("gameID", gameID, 1);
-            }
 
 
             // 從登入頁進來 詢問是否要直接進行遊戲
@@ -238,6 +249,17 @@
 
 
     </div>
+
+    <script>
+        // 點選對戰紀錄
+        function toGameResult(gameID) {
+            console.log("gameID:", gameID);
+
+            // 儲存點選紀錄之 GameID 供 gameResult 頁接 API
+            setCookie("gameID", gameID, 1);
+        }
+    </script>
+
 
 
 
