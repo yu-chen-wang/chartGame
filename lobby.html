@@ -9,7 +9,7 @@
 
     <style>
 
-        table tr td{
+        td{
             border: 1px solid black;
             border-collapse: collapse;
         }
@@ -34,10 +34,17 @@
             $("#userName").text(nickName);
 
             let winData = getWinData(playerID);
-            console.log(winData);
+            // console.log(winData);
 
-            let winRate = (winData.TotalWinGame / (winData.TotalFailGame + winData.TotalWinGame + winData.TotalDrawGame) * 100).toFixed(1) + " %";
+            let totalGame = winData.TotalWinGame + winData.TotalFailGame + winData.TotalDrawGame;
 
+            let winRate = ((winData.TotalWinGame / totalGame) * 100).toFixed(1);
+            if (isNaN(winRate)) {
+                winRate = 0 + " %";
+            }
+            else{
+                winRate = winRate + " %";
+            }
             $("#winRate").text(winRate);
 
             let winAndLoss = winData.TotalWinGame + " 勝 " + winData.TotalFailGame + " 敗 ";
@@ -165,16 +172,13 @@
             }
 
 
-
-
-
             // 從登入頁進來 詢問是否要直接進行遊戲
             setTimeout(function () {
                 // 前一頁
                 let referrer = document.referrer.split("/");
                 let prePage = referrer[referrer.length - 1];
 
-                if (prePage == "login.html") {
+                if (prePage == "index.html") {
                     let check = confirm("要立即進行對戰嗎？");
                     if (check == true) {
                         window.location = "competition.html";
@@ -195,8 +199,9 @@
                     setCookie("playerID", "", 0);
                     setCookie("imagePath", "", 0);
                     setCookie("nickName", "", 0);
+                    setCookie("gameID", "", 0);
 
-                    window.location = "login.html";
+                    window.location = "index.html";
                 }
                 else {
                     // console.log("否");
@@ -206,6 +211,12 @@
             // 按下開始遊戲
             $("#startGameBtn").click(function () {
                 window.location = "competition.html";
+            });
+
+
+            // 按下進階資料
+            $("#advanceRecordBtn").click(function () {
+                window.location = "advanceRecord.html";
             });
 
 
@@ -224,14 +235,14 @@
         <div style="width:30%; float: left">
             <img id="userImg">
             <p id="userName"></p>
-            <p>勝率 <span id="winRate">--.-%</span></p>
+            <p>勝率 <span id="winRate">0 %</span></p>
             <p id="winAndLoss">--</p>
             <input type="button" id="startGameBtn" value="開始遊戲">
         </div>
 
         <div style="width:70%; float: right;">
             <span>對戰紀錄 (近20場對戰紀錄)</span>
-            <input type="button" id="advanceDataBtn" value="進階數據">
+            <input type="button" id="advanceRecordBtn" value="進階數據">
 
             <table id="gameRecord" style="width:60%;border:1px solid black; text-align: center">
                 <tbody>
@@ -251,13 +262,17 @@
     </div>
 
     <script>
+
         // 點選對戰紀錄
         function toGameResult(gameID) {
             console.log("gameID:", gameID);
 
             // 儲存點選紀錄之 GameID 供 gameResult 頁接 API
             setCookie("gameID", gameID, 1);
+
+            window.location = "gameResult.html";
         }
+
     </script>
 
 

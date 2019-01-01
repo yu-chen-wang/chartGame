@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>進階數據</title>
+
+
+    <style>
+
+        .title {
+            text-align: center;
+            font-size: 28px;
+        }
+        
+    </style>
+
+    <!-- jquery -->
+    <script src="scripts\jquery-3.3.1.min.js" type="text/javascript"></script>
+
+    <!-- jquery ring chart -->
+    <script src="scripts\jquery.circliful.js" type="text/javascript"></script>
+
+    <!-- cookie function -->
+    <script src="scripts\cookie.js" type="text/javascript"></script>
+
+    <script>
+
+        $(document).ready(function () {
+
+            let playerID = getCookie("playerID");
+
+            let winData = getWinData(playerID);
+
+
+            let totalGame = winData.TotalWinGame + winData.TotalFailGame + winData.TotalDrawGame;
+
+
+            let advanceData = getAdvanceRecord(playerID);
+
+
+            // 平均每場盈虧
+            let avgProfit = ((advanceData.TotalGainMoney + advanceData.TotalLossMoney) / totalGame).toFixed(1);
+            if (isNaN(avgProfit)) {
+                avgProfit = "＄0 點";
+            }
+            else{
+                avgProfit = "＄" + avgProfit + "點";
+            }
+            $("#avgProfit").text(avgProfit);
+
+            // 賺錢場次佔比
+            let gainGameRate = ((advanceData.TotalGainGame / totalGame) * 100).toFixed();
+            if (isNaN(gainGameRate)) {
+                gainGameRate = 0;
+            }
+            $('#gainGameRate').circliful({
+                percent: gainGameRate,
+
+                animation: 1,
+
+                animationStep: 8,
+
+                percentageTextSize: 20,
+            });
+
+
+
+            // 賺錢場次平均賺
+            let avgGain = (advanceData.TotalGainMoney / advanceData.TotalGainGame).toFixed(1);
+            if (isNaN(avgGain)) {
+                avgGain = 0;
+            }
+            $("#avgGain").text(avgGain);
+
+
+            // 賠錢場次平均賠
+            let avgLoss = (advanceData.TotalLossMoney / advanceData.TotalLossGame).toFixed(1);
+            if (isNaN(avgLoss)) {
+                avgLoss = 0;
+            }
+            $("#avgLoss").text(avgLoss);
+
+
+            // 總成交口數
+            let totalLot = advanceData.TotalGainLot + advanceData.TotalLossLot + advanceData.TotalOLot;
+            console.log("總成交口數:", totalLot);
+
+            // 平均每場成交口數
+            let avgLot = (totalLot / totalGame).toFixed(1);
+            if (isNaN(avgLot)) {
+                avgLot = 0;
+            }
+            $("#avgLot").text(avgLot);
+
+
+            // 賺錢口佔比
+            let gainLotRate = ((advanceData.TotalGainLot / totalLot) * 100).toFixed();
+            if (isNaN(gainLotRate)) {
+                gainLotRate = 0;
+            }
+            $('#gainLotRate').circliful({
+                percent: gainLotRate,
+
+                animation: 1,
+
+                animationStep: 8,
+
+
+                percentageTextSize: 20,
+            });
+
+
+            // 賺錢口平均
+            let avgGainLot = (advanceData.TotalGainMoney / advanceData.TotalGainLot).toFixed(1);
+            if (isNaN(avgGainLot)) {
+                avgGainLot = 0;
+            }
+            $("#avgGainLot").text(avgGainLot);
+
+
+            // 賠錢口平均
+            let avgLossLot = (advanceData.TotalLossMoney / advanceData.TotalLossLot).toFixed(1);
+            if (isNaN(avgLossLot)) {
+                avgLossLot = 0;
+            }
+            $("#avgLossLot").text(avgLossLot);
+
+
+            // 單口賺最多
+            let maxGainLot = advanceData.MaxGainLotMoneyEver;
+            $("#maxGainLot").text(maxGainLot);
+
+
+            //單口賠最多
+            let maxLossLot = advanceData.MaxLossLotMoneyEver;
+            $("#maxLossLot").text(maxLossLot);
+
+
+            // 按下返回按鈕
+            $("#backBtn").click(function () {
+                window.location = "lobby.html";
+            });
+
+            // 取得勝敗場資料
+            function getWinData(playerID) {
+                let result;
+
+                $.ajax({
+                    url: 'callChartApi.php',
+                    type: 'GET',
+                    async: false,
+                    data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/UserInfo/GetWinData/' + playerID, data: false },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    success: function (response) {
+                        // console.log("response", response);
+                        result = JSON.parse(response);
+                    }
+                })
+
+                return result;
+            }
+
+
+
+            // 取得進階資料
+            function getAdvanceRecord(playerID) {
+                let result;
+
+                $.ajax({
+                    url: 'callChartApi.php',
+                    type: 'GET',
+                    async: false,
+                    data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/UserInfo/GetUserRecord/' + playerID, data: false },
+                    error: function (error) {
+                        console.log(error);
+                    },
+                    success: function (response) {
+                        // console.log("response", response);
+                        result = JSON.parse(response);
+                    }
+                })
+
+                return result;
+            }
+
+
+
+
+        });
+
+    </script>
+
+</head>
+
+<body>
+
+    <input type="button" id="backBtn" value="返回">
+    <p class="title">進階數據</p>
+
+    <div style="width:100%; height:80%;">
+
+        <div style="width:50%;float: left">
+            <p>平均每場盈虧 <span id="avgProfit" style="color:red"></span></p>
+            <p>賺錢場次佔比</p>
+            <div id="gainGameRate" style="width:50%" data-dimension="250" data-info="New Clients" data-width="30"
+                data-fontsize="38" data-fgcolor="#61a9dc" data-bgcolor="#eee" data-fill="#ddd">
+            </div>
+            <p>賺錢場次平均賺 <span id="avgGain"></span>點</p>
+            <p>賠錢場次平均賠 <span id="avgLoss"></span>點</p>
+        </div>
+
+        <div style="width:50%;float: right">
+            <p>平均每場成交口數 <span id="avgLot"></span></p>
+            <p>賺錢口佔比</p>
+            <div id="gainLotRate" style="width:50%" data-dimension="250" data-info="New Clients" data-width="30"
+                data-fontsize="38" data-fgcolor="#61a9dc" data-bgcolor="#eee" data-fill="#ddd">
+            </div>
+            <p>賺錢口平均 <span id="avgGainLot"></span>點</p>
+            <p>賠錢口平均 <span id="avgLossLot"></span>點</p>
+            <p>單口賺最多 <span id="maxGainLot"></span>點</p>
+            <p>單口賠最多 <span id="maxLossLot"></span>點</p>
+        </div>
+
+
+    </div>
+
+</body>
+
+</html>
