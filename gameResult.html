@@ -93,6 +93,9 @@
 
             // 賺錢口佔比
             let gainRate = ((tradeResult.GainLotSum / totalLot) * 100).toFixed();
+            if (isNaN(gainRate)) {
+                gainRate = 0;
+            }
             $('#gainRate').circliful({
                 percent: gainRate,
 
@@ -105,10 +108,16 @@
 
             // 獲利口平均賺
             let avgGainLot = (tradeResult.GainMoneySum / tradeResult.GainLotSum).toFixed(1);
+            if (isNaN(avgGainLot)) {
+                avgGainLot = 0;
+            }
             $("#avgGainLot").text(avgGainLot);
 
             // 虧損口平均賠
             let avgLossLot = (tradeResult.LossLotSum / tradeResult.LossLotSum).toFixed(1);
+            if (isNaN(avgLossLot)) {
+                avgLossLot = 0;
+            }
             $("#avgLossLot").text(avgLossLot);
 
             // 單口賺最多
@@ -382,8 +391,6 @@
                 let x = ohlc[tick][0];
                 let y;
 
-                let tradeAmount = tradeHistory.UserTradeHistory[i].TradeAmount
-
                 if (tradeHistory.UserTradeHistory[i].TradeAmount == 1) {
                     y = ohlc[tick][3] - 3;
                 }
@@ -585,6 +592,13 @@
                         marker: {
                             enabled: false
                         }
+                    }, {
+                        type: 'scatter',
+                        name: 'profitIcon',
+                        data: profitIcon,
+                        showInLegend: false,
+                        pointRange: 100000,
+                        yAxis: 1,
                     }],
                     exporting: {
                         buttons: {
@@ -747,8 +761,7 @@
 
             <div>
                 <div>
-                    <span id="result">勝利</span><span> 本場損益 </span><span id="myProfit"> -7 點 </span><span id="profit">
-                        (贏16點)</span>
+                    <span id="result"></span><span></span><span id="myProfit"></span><span id="profit"></span>
                 </div>
 
                 <div style="width:50%;float:left">

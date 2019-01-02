@@ -1,6 +1,6 @@
-玩家：   ID playerID 
+玩家ID： playerID 
 暱稱：   nickName 
 圖片：   imagePath
 帳號：   account
 密碼：   password 
-GameID:  gameID
+GameID:  gameID     // 遊戲結果查詢用
