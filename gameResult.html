@@ -216,7 +216,7 @@
             // x 軸時間
             let time;
 
-            for (let i = 0; i < 125; i++) {
+            for (let i = 0; i < 121; i++) {
 
                 // 最高價
                 if (data.KChartTickList[i].HighPr > lastPrMax) {
@@ -341,21 +341,21 @@
                 if (i == 0) {
                     profitIcon.push({
                         x: time + timezoneSet,
-                        y: -40,
+                        y: 15,
                         marker: {
                             symbol: p1Image,
-                            width: 20,
-                            height: 20
+                            width: 24,
+                            height: 24
                         }
                     });
 
                     profitIcon.push({
                         x: time + timezoneSet,
-                        y: 40,
+                        y: -15,
                         marker: {
                             symbol: p2Image,
-                            width: 20,
-                            height: 20
+                            width: 24,
+                            height: 24
                         }
                     });
                 }
@@ -380,10 +380,6 @@
 
             }
 
-            // console.log("p1Profit data:", p1ProfitData);
-            // console.log("p2Profit data:", p2ProfitData);
-
-
             // 處理 p1 交易點
             for (let i = 0; i < tradeHistory.UserTradeHistory.length; i++) {
 
@@ -392,10 +388,10 @@
                 let y;
 
                 if (tradeHistory.UserTradeHistory[i].TradeAmount == 1) {
-                    y = ohlc[tick][3] - 3;
+                    y = ohlc[tick][3] - 2;
                 }
                 else {
-                    y = ohlc[tick][2] + 3;
+                    y = ohlc[tick][2] + 2;
                 }
 
                 p1TradeIcon.push({
@@ -417,10 +413,10 @@
                 let y;
 
                 if (tradeHistory.RivalTradeHistory[i].TradeAmount == 1) {
-                    y = ohlc[tick][3] - 3;
+                    y = ohlc[tick][3] - 4;
                 }
                 else {
-                    y = ohlc[tick][2] + 3;
+                    y = ohlc[tick][2] + 4;
                 }
 
                 p2TradeIcon.push({

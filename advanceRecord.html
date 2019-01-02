@@ -42,7 +42,7 @@
 
 
             // 平均每場盈虧
-            let avgProfit = ((advanceData.TotalGainMoney + advanceData.TotalLossMoney) / totalGame).toFixed(1);
+            let avgProfit = ((advanceData.TotalGainMoney - advanceData.TotalLossMoney) / totalGame).toFixed(1);
             if (isNaN(avgProfit)) {
                 avgProfit = "＄0 點";
             }
@@ -71,6 +71,9 @@
             // 賺錢場次平均賺
             let avgGain = (advanceData.TotalGainMoney / advanceData.TotalGainGame).toFixed(1);
             if (isNaN(avgGain)) {
+                avgGain = 0;
+            }
+            if(avgGain == Infinity){
                 avgGain = 0;
             }
             $("#avgGain").text(avgGain);
@@ -205,9 +208,9 @@
     <div style="width:100%; height:80%;">
 
         <div style="width:50%;float: left">
-            <p>平均每場盈虧 <span id="avgProfit" style="color:red"></span></p>
+            <p>平均每場盈虧 <span id="avgProfit"></span></p>
             <p>賺錢場次佔比</p>
-            <div id="gainGameRate" style="width:50%" data-dimension="250" data-info="New Clients" data-width="30"
+            <div id="gainGameRate" style="width:35%" data-dimension="250" data-info="New Clients" data-width="30"
                 data-fontsize="38" data-fgcolor="#61a9dc" data-bgcolor="#eee" data-fill="#ddd">
             </div>
             <p>賺錢場次平均賺 <span id="avgGain"></span>點</p>
@@ -217,7 +220,7 @@
         <div style="width:50%;float: right">
             <p>平均每場成交口數 <span id="avgLot"></span></p>
             <p>賺錢口佔比</p>
-            <div id="gainLotRate" style="width:50%" data-dimension="250" data-info="New Clients" data-width="30"
+            <div id="gainLotRate" style="width:35%" data-dimension="250" data-info="New Clients" data-width="30"
                 data-fontsize="38" data-fgcolor="#61a9dc" data-bgcolor="#eee" data-fill="#ddd">
             </div>
             <p>賺錢口平均 <span id="avgGainLot"></span>點</p>

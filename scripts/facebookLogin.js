@@ -2,7 +2,9 @@
 //初始化
 window.fbAsyncInit = function () {
     FB.init({
-        appId: 492289464627468,
+        appId: 492289464627468,      // localhost
+        // appId: 941991552488203,      // dev.cmoney.tw 
+        // appId: 691595587610948,      // test.cmoney.asia
         cookie: true,
         xfbml: true,
         version: 'v2.12'

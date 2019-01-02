@@ -1,7 +1,9 @@
 
 
 // 建立 cookie
-// param exdays cookie 有效天數
+// @param cname Cookie Name
+// @param cvalue Cookie Value
+// @param exdays Cookie 有效天數
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));

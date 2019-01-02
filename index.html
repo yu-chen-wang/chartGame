@@ -184,9 +184,9 @@
                             NickName: nickName,
                             ImagePath: imagePath
                         }
-                        console.log("user:", user);
+
                         playerID = getPlayerID(JSON.stringify(user));
-                        console.log(playerID);
+
                         if (playerID != -1) {
                             console.log("登入成功:", playerID);
                             setCookie("playerID", playerID, 7);
@@ -384,7 +384,6 @@
             });
         }
 
-        
         // 登入 FB 帳號
         function loginFBAccount(fbToken) {
 
