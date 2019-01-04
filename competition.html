@@ -41,7 +41,7 @@
             let closePriceDate = dateArray[0] + dateArray[1] + dateArray[2];
 
             // 昨收價
-            let ytdClosePrice = getYtdClosePrice(closePriceDate);
+            let ytdClosePrice = parseInt(getYtdClosePrice(closePriceDate));
 
 
             // 取得遊戲資料日期
@@ -280,6 +280,8 @@
             console.log("data:", data);
             console.log('昨收價:', ytdClosePrice);
 
+            let ytdClosePr = new Array();
+
             // 遊戲紀錄
             let gameDetail = initGameDetail();
 
@@ -410,57 +412,52 @@
 
 
             // 遊戲開始前先載入20筆資料 並計算最大值和最小值
-            for (let i = 0; i < 125; i++) {
+            for (let i = 0; i < 30; i++) {
 
-                // 最高價
-                if (data.KChartTickList[i].HighPr > lastPrMax) {
-                    lastPrMax = data.KChartTickList[i].HighPr;
+                time = new Date(data.KChartTickList[i].kTickTime).getTime();
+
+                ohlc.push([
+                    time,                                      // 時間
+                    data.KChartTickList[i].OpenPr,             // 開盤價
+                    data.KChartTickList[i].HighPr,             // 最高價
+                    data.KChartTickList[i].LowPr,              // 最低價
+                    data.KChartTickList[i].LastPr              // 收盤價
+                ]);
+
+                // 收盤價 - 開盤價
+                let price = data.KChartTickList[i].LastPr - data.KChartTickList[i].OpenPr;
+
+                // 漲
+                if (price > 0) {
+                    qtyColor = '#FF0000';
+                }
+                // 跌
+                else if (price < 0) {
+                    qtyColor = '#00DD00';
+                }
+                // 開盤 == 收盤
+                else {
+                    qtyColor = '#888888';
                 }
 
-                // 最低價
-                if (data.KChartTickList[i].LowPr < lastPrMin) {
-                    lastPrMin = data.KChartTickList[i].LowPr;
-                }
+                // 成交量
+                totalQty.push({
+                    x: time,               // 時間
+                    y: data.KChartTickList[i].TotalQty,        // 成交量
+                    color: qtyColor
+                });
 
-                if (i < 20) {
-                    time = data.KChartTickList[i].kTickTime;
 
-                    ohlc.push([
-                        new Date(time).getTime(),     // 時間
-                        data.KChartTickList[i].OpenPr,              // 開盤價
-                        data.KChartTickList[i].HighPr,              // 最高價
-                        data.KChartTickList[i].LowPr,               // 最低價
-                        data.KChartTickList[i].LastPr               // 收盤價
-                    ]);
-
-                    // 收盤價 - 開盤價
-                    let price = data.KChartTickList[i].LastPr - data.KChartTickList[i].OpenPr;
-
-                    // 漲
-                    if (price > 0) {
-                        qtyColor = '#FF0000';
-                    }
-                    // 跌
-                    else if (price < 0) {
-                        qtyColor = '#00DD00';
-                    }
-                    // 開盤 == 收盤
-                    else {
-                        qtyColor = '#888888';
-                    }
-
-                    // 成交量
-                    totalQty.push({
-                        x: new Date(time).getTime(),               // 時間
-                        y: data.KChartTickList[i].TotalQty,        // 成交量
-                        color: qtyColor
-                    });
-                }
+                ytdClosePr.push({
+                    x: time,
+                    y: ytdClosePrice
+                });
 
             }
+            // console.log(ytdClosePr);
 
             // 開始 timeTick
-            let i = 19;
+            let i = 29;
 
             // 遊戲開始 每秒新增一筆資料
             let gameThread = setInterval(function () {
@@ -534,11 +531,18 @@
                             y: data.KChartTickList[i].TotalQty,        // 成交量
                             color: qtyColor
                         });
+
+                        ytdClosePr.push({
+                            x: new Date(time).getTime(),
+                            y: ytdClosePrice
+                        });
+
                     }
 
                 }
 
             }, 1000);
+
 
 
             // 按下賣按鈕
@@ -805,6 +809,9 @@
                 })
             }
 
+
+
+
             // create the chart
             gameChart = Highcharts.stockChart('gameChart', {
 
@@ -815,6 +822,7 @@
                             let chartInterval = setInterval(function () {
 
                                 if (startCountDown == 0) {
+
                                     gameChart.series[0].setData(ohlc);
                                     gameChart.series[0].update({
                                         data: ohlc
@@ -825,15 +833,20 @@
                                         data: totalQty
                                     })
 
+                                    gameChart.series[3].setData(ytdClosePr);
+
+
+                                    // gameChart.series[2].setData(tradeIcon);
+
 
                                     // 圖表 X軸長度
-                                    let chartXaxisLength = 21;
+                                    let chartXaxisLength = 30;
 
-                                    let xEnd = ohlc.length;
+                                    let xEnd = ohlc.length - 1;
                                     let xStart = xEnd - chartXaxisLength;
 
                                     // 調整圖表 x軸 頭尾
-                                    gameChart.xAxis[0].setExtremes(ohlc[xStart][0], ohlc[xEnd - 1][0]);
+                                    gameChart.xAxis[0].setExtremes(ohlc[xStart][0], ohlc[xEnd][0]);
 
                                     // 計算 P1 及時累積損益(未完成交易) 先賣再買
                                     if (p1Status.lot == -1) {
@@ -1019,7 +1032,6 @@
                     align: 'left',
                     verticalAlign: 'top',
                     floating: true,
-                    // backgroundColor: '#FFFFFF'
                 },
 
                 plotOptions: {
@@ -1038,11 +1050,11 @@
                 },
 
                 yAxis: [{
-                    // y軸 max
-                    max: lastPrMax + 20,
+                    // // y軸 max
+                    // max: lastPrMax + 20,
 
-                    // y軸 min
-                    min: lastPrMin - 20,
+                    // // y軸 min
+                    // min: lastPrMin - 20,
 
                     labels: {
                         align: 'right',
@@ -1092,8 +1104,7 @@
                     id: 'ohlc',
                     data: ohlc,
                     showInLegend: false,
-                    pointRange: 100000,
-                    // pointWidth: 50,
+                    // pointRange: 100000,
                     gapSize: 20,
                     marker: {
                         enabled: false
@@ -1104,8 +1115,7 @@
                     data: totalQty,
                     yAxis: 1,
                     showInLegend: false,
-                    pointRange: 100000,
-                    // pointWidth: 50,
+                    // pointRange: 100000,
                     marker: {
                         enabled: false
                     }
@@ -1114,11 +1124,19 @@
                     name: 'tradeIcon',
                     data: tradeIcon,
                     showInLegend: false,
-                    pointRange: 100000,
-                    // pointWidth: 50,
-                    // dataLabels: {
-                    //     enabled: true
-                    // }
+                    // pointRange: 100000,
+                }, {
+                    type: 'line',
+                    name: '昨收價',
+                    data: ytdClosePr,
+                    showInLegend: true,
+                    color: '#00BBFF',
+                    width: 2,
+                    events: {
+                        legendItemClick: function () {
+                            return false;
+                        }
+                    }
                 }, {
                     name: "5MA",
                     linkedTo: "ohlc",
@@ -1131,6 +1149,11 @@
                     },
                     marker: {
                         enabled: false
+                    },
+                    events: {
+                        legendItemClick: function () {
+                            return false;
+                        }
                     }
                 }],
                 exporting: {
@@ -1142,8 +1165,6 @@
                 }
 
             });
-
-
 
 
 

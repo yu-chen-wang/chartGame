@@ -163,10 +163,9 @@
             let ytdPriceDate = year + month + day;
 
             // 昨收價
-            let ytdClosePrice = getYtdClosePrice(ytdPriceDate);
+            let ytdClosePrice = parseInt(getYtdClosePrice(ytdPriceDate));
 
             let data = getTickData(date);
-            console.log("data:", data);
 
             // 取得 p1 Image
             let p1ImagePath = getCookie("imagePath");
@@ -176,6 +175,9 @@
 
             // 機器人圖片
             let p2Image = "url(http://www.cmoney.tw/follow/images/head-icons/a24.gif)";
+
+            // 昨收價
+            let ytdClosePr = new Array();
 
             // 最高價
             let lastPrMax = data.KChartTickList[0].HighPr;
@@ -212,8 +214,6 @@
                 profit: 0,
             }
 
-            let timezoneSet = Math.abs(new Date().getTimezoneOffset() / 60) * 60 * 60 * 1000;
-
             // x 軸時間
             let time;
 
@@ -231,6 +231,10 @@
 
                 time = new Date(data.KChartTickList[i].kTickTime).getTime();
 
+                ytdClosePr.push({
+                    x: time,
+                    y: ytdClosePrice
+                });
 
                 // p1 及時損益
                 for (let j = 0; j < tradeHistory.UserTradeHistory.length; j++) {
@@ -341,7 +345,7 @@
                 // 及時損益 icon
                 if (i == 0) {
                     profitIcon.push({
-                        x: time + timezoneSet,
+                        x: time,
                         y: 30,
                         marker: {
                             symbol: p1Image,
@@ -351,7 +355,7 @@
                     });
 
                     profitIcon.push({
-                        x: time + timezoneSet,
+                        x: time,
                         y: -30,
                         marker: {
                             symbol: p2Image,
@@ -362,30 +366,23 @@
                 }
 
                 p1ProfitData.push({
-                    x: time + timezoneSet,
+                    x: time,
                     y: p1Status.profit
                 });
 
                 p2ProfitData.push({
-                    x: time + timezoneSet,
+                    x: time,
                     y: p2Status.profit
                 });
 
                 ohlc.push([
-                    time + timezoneSet,                  // 時間
+                    time,                  // 時間
                     data.KChartTickList[i].OpenPr,       // 開盤價
                     data.KChartTickList[i].HighPr,       // 最高價
                     data.KChartTickList[i].LowPr,        // 最低價
                     data.KChartTickList[i].LastPr        // 收盤價
                 ]);
 
-            }
-
-            if (ytdClosePrice > lastPrMax) {
-                ytdClosePrice = lastPrMax + 1;
-            }
-            if (ytdClosePrice < lastPrMin) {
-                ytdClosePrice = lastPrMin - 1;
             }
 
             // 處理 p1 交易點
@@ -452,6 +449,12 @@
                 $("#gameResult").hide();
                 $("#tradeRecord").show();
 
+                Highcharts.setOptions({
+                    global: {
+                        useUTC: false  //是否使用世界标准时间  
+                    }
+                });
+
                 // create the chart
                 gameChart = Highcharts.stockChart('gameChart', {
 
@@ -482,10 +485,10 @@
                     },
                     yAxis: [{
                         // y軸 max
-                        max: lastPrMax,
+                        max: lastPrMax + 5,
 
                         // y軸 min
-                        min: lastPrMin,
+                        min: lastPrMin - 5,
 
                         labels: {
                             align: 'right',
@@ -553,8 +556,19 @@
                         data: p2TradeIcon,
                         showInLegend: false,
                         pointRange: 100000,
-                    },
-                    {
+                    }, {
+                        type: 'line',
+                        name: '昨收價',
+                        data: ytdClosePr,
+                        showInLegend: true,
+                        color: '#00BBFF',
+                        width: 2,
+                        events: {
+                            legendItemClick: function () {
+                                return false;
+                            }
+                        }
+                    }, {
                         name: "5MA",
                         linkedTo: "ohlc",
                         showInLegend: true,
@@ -574,8 +588,6 @@
                         data: p1ProfitData,
                         yAxis: 1,
                         showInLegend: false,
-                        pointRange: 100000,
-                        // pointWidth: 50,
                         marker: {
                             enabled: false
                         }
@@ -585,8 +597,6 @@
                         data: p2ProfitData,
                         yAxis: 1,
                         showInLegend: false,
-                        pointRange: 100000,
-                        // pointWidth: 50,
                         marker: {
                             enabled: false
                         }
@@ -595,7 +605,6 @@
                         name: 'profitIcon',
                         data: profitIcon,
                         showInLegend: false,
-                        pointRange: 100000,
                         yAxis: 1,
                     }],
                     exporting: {
