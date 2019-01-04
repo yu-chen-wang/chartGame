@@ -412,7 +412,7 @@
 
 
             // 遊戲開始前先載入20筆資料 並計算最大值和最小值
-            for (let i = 0; i < 30; i++) {
+            for (let i = 0; i < 20; i++) {
 
                 time = new Date(data.KChartTickList[i].kTickTime).getTime();
 
@@ -457,7 +457,7 @@
             // console.log(ytdClosePr);
 
             // 開始 timeTick
-            let i = 29;
+            let i = 19;
 
             // 遊戲開始 每秒新增一筆資料
             let gameThread = setInterval(function () {
@@ -824,23 +824,20 @@
                                 if (startCountDown == 0) {
 
                                     gameChart.series[0].setData(ohlc);
-                                    gameChart.series[0].update({
-                                        data: ohlc
-                                    })
+                                    // gameChart.series[0].update({
+                                    //     data: ohlc
+                                    // })
 
                                     gameChart.series[1].setData(totalQty);
-                                    gameChart.series[1].update({
-                                        data: totalQty
-                                    })
+                                    // gameChart.series[1].update({
+                                    //     data: totalQty
+                                    // })
 
                                     gameChart.series[3].setData(ytdClosePr);
 
 
-                                    // gameChart.series[2].setData(tradeIcon);
-
-
                                     // 圖表 X軸長度
-                                    let chartXaxisLength = 30;
+                                    let chartXaxisLength = 20;
 
                                     let xEnd = ohlc.length - 1;
                                     let xStart = xEnd - chartXaxisLength;
