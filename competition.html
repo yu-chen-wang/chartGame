@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-
-    <!-- <link rel="stylesheet" type="text/css" href="styles\reset.css"> -->
+    <title>對戰</title>
 
     <!-- jquery -->
     <script src="scripts\jquery-3.3.1.min.js" type="text/javascript"></script>
@@ -89,7 +88,7 @@
 
                 // 亂數出的月份天數
                 let dayMax = new Date(year, month, 0).getDate();
-                // console.log("dayMax:", dayMax);
+
                 let dayMin = 1;
 
                 if (month == monthMax) {
@@ -187,7 +186,7 @@
             let p1Status = {
                 lot: 0,         // 持有口數
                 Profit: 0,      // 及時損益(未成交)
-                lastTick: 0     // 最近買賣的 tickTime
+                lastTick: 0     // 最近買賣的 tick
             }
 
             let p2Status = {
@@ -288,7 +287,8 @@
             gameDetail.P2PlayerID = p2TradeDetail.tradeResult.PlayerID;
 
             // 取得 GameID
-            let gameID = parseInt(getGameID(JSON.stringify(gameDetail)));
+            // let gameID = parseInt(getGameID(JSON.stringify(gameDetail)));
+            gameID = 12345;
             console.log("gameID:", gameID);
 
             p1TradeDetail.GameID = gameID;
@@ -346,8 +346,6 @@
                 return result;
             }
 
-
-
             $("#sellBtn").prop("disabled", true);
             $("#buyBtn").prop("disabled", true);
 
@@ -392,13 +390,14 @@
 
             let date = new Date();
 
+            // 每筆資料時間
             let time;
 
             // 最高價
-            let lastPrMax = data.KChartTickList[0].LastPr;
-            
+            let lastPrMax = data.KChartTickList[0].HighPr;
+
             // 最低價
-            let lastPrMin = data.KChartTickList[0].LastPr;
+            let lastPrMin = data.KChartTickList[0].LowPr;
 
             // 轉換時區
             let timezoneSet = Math.abs(date.getTimezoneOffset() / 60) * 60 * 60 * 1000;
@@ -407,7 +406,7 @@
             let minXaxis = new Date(data.KChartTickList[0].kTickTime).getTime();
 
             // x軸最大值 
-            let maxXaxis = new Date(data.KChartTickList[0].kTickTime).getTime()+ 1200000;
+            let maxXaxis = new Date(data.KChartTickList[0].kTickTime).getTime() + 1140000;
 
 
             // 遊戲開始前先載入20筆資料 並計算最大值和最小值
@@ -452,14 +451,14 @@
 
                     // 成交量
                     totalQty.push({
-                        x: new Date(time).getTime(), // 時間
+                        x: new Date(time).getTime(),               // 時間
                         y: data.KChartTickList[i].TotalQty,        // 成交量
                         color: qtyColor
                     });
                 }
 
             }
-            
+
             // 開始 timeTick
             let i = 19;
 
@@ -479,11 +478,11 @@
                         time = data.KChartTickList[i].kTickTime;
 
                         ohlc.push([
-                            new Date(time).getTime(),     // 時間
-                            data.KChartTickList[i].OpenPr,              // 開盤價
-                            data.KChartTickList[i].HighPr,              // 最高價
-                            data.KChartTickList[i].LowPr,               // 最低價
-                            data.KChartTickList[i].LastPr               // 收盤價
+                            new Date(time).getTime(),                 // 時間
+                            data.KChartTickList[i].OpenPr,            // 開盤價
+                            data.KChartTickList[i].HighPr,            // 最高價
+                            data.KChartTickList[i].LowPr,             // 最低價
+                            data.KChartTickList[i].LastPr             // 收盤價
                         ]);
 
                         // 收盤價 - 開盤價
@@ -500,7 +499,7 @@
                                 priceCount++;
                             }
 
-                            if (priceCount == 2 && p2Status.lot >= 0 && p2Status.lot <= 1) {
+                            if (priceCount == 2 && p2Status.lot >= 0 && p2Status.lot <= 1 && i > 20) {
 
                                 // AI 賣
                                 sell({ data: "p2" });
@@ -517,7 +516,7 @@
                                 priceCount--;
                             }
 
-                            if (priceCount == -2 && p2Status.lot >= -1 && p2Status.lot <= 0) {
+                            if (priceCount == -2 && p2Status.lot >= -1 && p2Status.lot <= 0 && i > 20) {
 
                                 // AI 買
                                 buy({ data: "p2" });
@@ -611,6 +610,7 @@
 
                 gameChart.series[2].setData(tradeIcon);
 
+
                 playerTrade.TradeHistory.push(
                     {
                         GameID: gameID,
@@ -685,6 +685,8 @@
                 }
 
                 gameChart.series[2].setData(tradeIcon);
+
+
                 playerTrade.TradeHistory.push(
                     {
                         GameID: gameID,
@@ -771,7 +773,7 @@
             }
 
 
-            // 遊戲結束後更新 GameDetail
+            // 遊戲結束後更新雙方損益
             function updateBothProfit(bothProfit) {
                 $.ajax({
                     url: 'callChartApi.php',
@@ -809,12 +811,20 @@
                 chart: {
                     events: {
                         load: function () {
-                            // set up the updating of the chart each second
+                            // 每秒更新圖表
                             let chartInterval = setInterval(function () {
 
                                 if (startCountDown == 0) {
                                     gameChart.series[0].setData(ohlc);
+                                    gameChart.series[0].update({
+                                        data: ohlc
+                                    })
+
                                     gameChart.series[1].setData(totalQty);
+                                    gameChart.series[1].update({
+                                        data: totalQty
+                                    })
+
 
                                     // 圖表 X軸長度
                                     let chartXaxisLength = 21;
@@ -829,14 +839,12 @@
                                     if (p1Status.lot == -1) {
                                         p1Profit = p1Status.Profit + data.KChartTickList[p1Status.lastTick].LastPr - data.KChartTickList[i].LastPr;
                                         $("#p1Profit").text(p1Profit);
-                                        // console.log(p1Status.Profit);
                                     }
 
                                     // 計算 P1 及時累積損益(未完成交易) 先買再賣
                                     if (p1Status.lot == 1) {
                                         p1Profit = p1Status.Profit + data.KChartTickList[i].LastPr - data.KChartTickList[p1Status.lastTick].LastPr;
                                         $("#p1Profit").text(p1Profit);
-                                        // console.log(p1Status.Profit);
                                     }
 
                                     // P2 及時累積損益 先賣再買
@@ -892,7 +900,7 @@
                                         $("#buyBtn").prop("disabled", true);
                                         $("#sellBtn").prop("disabled", true);
 
-                                        // p1 先買再賣
+                                        // p1 先買還沒賣
                                         if (p1Status.lot == 1) {
 
                                             setTrade("sell", "p1");
@@ -909,7 +917,7 @@
                                             )
                                         }
 
-                                        // p1 先賣再買
+                                        // p1 先賣還沒買
                                         if (p1Status.lot == -1) {
 
                                             setTrade("buy", "p1");
@@ -926,7 +934,7 @@
                                             )
                                         }
 
-                                        // p2 先買再賣
+                                        // p2 先買還沒賣
                                         if (p2Status.lot == 1) {
 
                                             setTrade("sell", "p2");
@@ -943,7 +951,7 @@
                                             )
                                         }
 
-                                        // p2 先賣再買
+                                        // p2 先賣還沒買
                                         if (p2Status.lot == -1) {
 
                                             setTrade("buy", "p2");
@@ -977,16 +985,16 @@
                                         console.log("p2 trade:", p2TradeDetail);
 
                                         // 更新 GameDetail
-                                        updateBothProfit(JSON.stringify(bothProfit));
+                                        // updateBothProfit(JSON.stringify(bothProfit));
 
-                                        // 上傳雙方 TradeDetail
-                                        updateTradeDetail(JSON.stringify(p1TradeDetail));
-                                        updateTradeDetail(JSON.stringify(p2TradeDetail));
+                                        // // 上傳雙方 TradeDetail
+                                        // updateTradeDetail(JSON.stringify(p1TradeDetail));
+                                        // updateTradeDetail(JSON.stringify(p2TradeDetail));
 
-                                        setCookie("gameID", gameID, 1);
+                                        // setCookie("gameID", gameID, 1);
 
                                         // 跳轉到遊戲結果頁
-                                        window.location = "gameFinish.html";
+                                        // window.location = "gameFinish.html";
 
                                         clearInterval(chartInterval);
                                     }
@@ -1025,8 +1033,8 @@
                     labels: {
                         enabled: false
                     },
-                    min: minXaxis,
-                    max: maxXaxis,
+                    // min: minXaxis,
+                    // max: maxXaxis,
                 },
 
                 yAxis: [{
@@ -1144,7 +1152,7 @@
 
     </script>
 
-    <title>對戰</title>
+
 </head>
 
 <body>

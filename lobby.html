@@ -133,6 +133,10 @@
                     let dateArray = data[i].GameDate.split("T");
 
                     let hours = d.getHours();
+                    if (hours < 10) {
+                        hours = "0" + hours;
+                    }
+
                     let minutes = d.getMinutes();
 
                     if (minutes < 10) {

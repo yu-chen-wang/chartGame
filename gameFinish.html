@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>遊戲結果</title>
+    <title>遊戲結束</title>
 
     <!-- jquery -->
     <script src="scripts\jquery-3.3.1.min.js" type="text/javascript"></script>
@@ -178,10 +178,10 @@
             let p2Image = "url(http://www.cmoney.tw/follow/images/head-icons/a24.gif)";
 
             // 最高價
-            let lastPrMax = data.KChartTickList[0].LastPr;
+            let lastPrMax = data.KChartTickList[0].HighPr;
 
             // 最低價
-            let lastPrMin = data.KChartTickList[0].LastPr;
+            let lastPrMin = data.KChartTickList[0].LowPr;
 
             let ohlc = new Array();
 
@@ -342,7 +342,7 @@
                 if (i == 0) {
                     profitIcon.push({
                         x: time + timezoneSet,
-                        y: 15,
+                        y: 30,
                         marker: {
                             symbol: p1Image,
                             width: 24,
@@ -352,7 +352,7 @@
 
                     profitIcon.push({
                         x: time + timezoneSet,
-                        y: -15,
+                        y: -30,
                         marker: {
                             symbol: p2Image,
                             width: 24,
@@ -379,6 +379,13 @@
                     data.KChartTickList[i].LastPr        // 收盤價
                 ]);
 
+            }
+
+            if (ytdClosePrice > lastPrMax) {
+                ytdClosePrice = lastPrMax + 1;
+            }
+            if (ytdClosePrice < lastPrMin) {
+                ytdClosePrice = lastPrMin - 1;
             }
 
             // 處理 p1 交易點
@@ -475,10 +482,10 @@
                     },
                     yAxis: [{
                         // y軸 max
-                        max: lastPrMax + 5,
+                        max: lastPrMax,
 
                         // y軸 min
-                        min: lastPrMin - 5,
+                        min: lastPrMin,
 
                         labels: {
                             align: 'right',
