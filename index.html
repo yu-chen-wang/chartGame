@@ -41,22 +41,17 @@
                 account = getCookie("account");
                 password = getCookie("password");
 
-                // 如果 cookie 有帳號
-                if (account.length > 0) {
+                // 如果 cookie 有帳號密碼
+                if (account.length > 0 && password.length > 0) {
                     $("#account").val(account);
-                }
-
-                // 如果 cookie 有密碼
-                if (password.length > 0) {
                     $("#password").val(password);
+                    $("#isRemember").prop('checked', true);
                 }
-
 
                 // 按下註冊按鈕
                 $("#registerBtn").click(function () {
                     window.location = "register.html";
                 });
-
 
                 dialog = $("#dialog-form").dialog({
                     autoOpen: false,
@@ -66,7 +61,6 @@
                     buttons: {
                         "確認": function () {
                             let email = $("#forgotMail").val();
-                            console.log("forgotMail:", email);
 
                             if (validateEmail(email)) {
 
@@ -76,19 +70,22 @@
                                 }
 
                                 let result = sendChangeMail(data);
-                                console.log("result:", result);
                                 let responseCode = result.ResponseCode;
                                 let responseMsg = result.ResponseMsg;
 
+                                // 正常
                                 if (responseCode == 1) {
                                     alert("已寄出密碼重設信");
                                 }
+                                // 已申請,請等一分鐘
                                 else if (responseCode == 3) {
                                     alert(responseMsg);
                                 }
+                                // 格式錯誤
                                 else if (responseCode == 5) {
                                     alert(responseMsg);
                                 }
+                                // 帳號不存在
                                 else if (responseCode == 6) {
                                     alert(responseMsg);
                                 }
@@ -132,7 +129,6 @@
                 $("#login").click(function () {
                     account = $("#account").val();
                     password = $("#password").val();
-
                     password = $.md5(password);
 
                     // 登入 API 資料
@@ -147,20 +143,22 @@
                     }
 
                     let loginResult = getGuid(loginData);
-
                     let loginResponCode = loginResult.ResponseCode;
-
                     let loginResponseMsg = loginResult.ResponseMsg;
 
+                    // 帳密錯誤
                     if (loginResponCode == 2) {
                         alert("帳號密碼錯誤");
                     }
+                    // 帳號尚未啟用
                     if (loginResponCode == 3) {
                         alert(loginResponseMsg);
                     }
+                    // 試用到期
                     if (loginResponCode == 110) {
                         alert(loginResponseMsg);
                     }
+                    // 登入成功
                     else if (loginResponCode == 1) {
 
                         guid = loginResult.Guid;
@@ -211,8 +209,6 @@
                 })
                 
             }
-
-
 
             // 取得會員 guid
             // return guid

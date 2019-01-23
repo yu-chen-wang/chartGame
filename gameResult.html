@@ -38,10 +38,6 @@
             let playerID = getCookie("playerID");
             console.log("playerID:", playerID);
 
-            // 進來先隱藏下單紀錄 div
-            $("#tradeRecord").hide();
-
-
             let gameDetailList = getGameDetail(playerID);
 
             // 損益結果
@@ -62,30 +58,36 @@
             let p2Profit = gameDetail.P2Profit;
 
             let profit = p1Profit - p2Profit;
+            let gameResultProfit;
 
             if (profit > 0) {
                 result = "勝利";
-                profit = " (贏" + profit + "點)";
+                gameResultProfit = " (贏" + profit + "點)";
             }
             else if (profit < 0) {
                 result = "失敗";
-                profit = " (輸" + profit + "點)";
+                gameResultProfit = " (輸" + profit + "點)";
             }
             else {
                 result = "平手";
-                profit = "";
+                gameResultProfit = "";
             }
 
             $("#result").text(result);
 
             $("#myProfit").text(p1Profit);
 
-            $("#profit").text(profit);
+            $("#profit").text(gameResultProfit);
+
+            // 按下返回首頁
+            $("#backBtn").click(function () {
+                window.location = "lobby.html";
+            });
 
 
             // 交易結果
             let tradeResult = getTradeResult(gameID, playerID);
-            // console.log("gameresult:", tradeResult);
+            // console.log("tradeResult:", tradeResult);
 
             // 成交口數
             let totalLot = tradeResult.GainLotSum + tradeResult.LossLotSum + tradeResult.OLotSum;
@@ -148,8 +150,8 @@
             let d = new Date(date);
 
             let year = d.getFullYear();
-            let month = d.getMonth();
-            let day = d.getDay();
+            let month = d.getMonth() + 1;
+            let day = d.getDate();
 
             if (month < 10) {
                 month = "0" + month;
@@ -214,8 +216,11 @@
                 profit: 0,
             }
 
+
             // x 軸時間
             let time;
+
+            let quitTick;
 
             for (let i = 0; i < 121; i++) {
 
@@ -269,9 +274,16 @@
 
                         }
 
+                        // 玩家退出遊戲座標
+                        else if (tradeAmount == 0) {
+                            quitTick = tradeTick;
+                        }
+
                     }
 
                 }
+
+
 
 
                 // 買了還沒賣
@@ -346,25 +358,49 @@
 
                 // 及時損益 icon
                 if (i == 0) {
-                    profitIcon.push({
-                        x: time,
-                        y: 30,
-                        marker: {
-                            symbol: p1Image,
-                            width: 24,
-                            height: 24
-                        }
-                    });
+                    // 贏的人 Icon 在上，輸在下
+                    if (profit > 0) {
+                        profitIcon.push({
+                            x: time,
+                            y: 80,
+                            marker: {
+                                symbol: p1Image,
+                                width: 24,
+                                height: 24
+                            }
+                        });
 
-                    profitIcon.push({
-                        x: time,
-                        y: -30,
-                        marker: {
-                            symbol: p2Image,
-                            width: 24,
-                            height: 24
-                        }
-                    });
+                        profitIcon.push({
+                            x: time,
+                            y: -80,
+                            marker: {
+                                symbol: p2Image,
+                                width: 24,
+                                height: 24
+                            }
+                        });
+                    }
+                    else {
+                        profitIcon.push({
+                            x: time,
+                            y: 80,
+                            marker: {
+                                symbol: p2Image,
+                                width: 24,
+                                height: 24
+                            }
+                        });
+
+                        profitIcon.push({
+                            x: time,
+                            y: -80,
+                            marker: {
+                                symbol: p1Image,
+                                width: 24,
+                                height: 24
+                            }
+                        });
+                    }
                 }
 
                 p1ProfitData.push({
@@ -385,9 +421,12 @@
                     data.KChartTickList[i].LastPr        // 收盤價
                 ]);
 
+                // 退出遊戲座標
+                if (i == quitTick) {
+                    break;
+                }
+
             }
-
-
 
             // 處理 p1 交易點
             for (let i = 0; i < tradeHistory.UserTradeHistory.length; i++) {
@@ -439,320 +478,290 @@
                 })
             }
 
-            // 按下遊戲結果
-            $("#gameResultBtn").click(function () {
-                $("#gameResult").show();
-                $("#tradeRecord").hide();
-
+            Highcharts.setOptions({
+                global: {
+                    useUTC: false   //是否使用世界標準時間 
+                }
             });
 
+            // create the chart
+            gameChart = Highcharts.stockChart('gameChart', {
 
-            // 按下下單紀錄
-            $("#tradeRecordBtn").click(function () {
-                $("#gameResult").hide();
-                $("#tradeRecord").show();
-
-                Highcharts.setOptions({
-                    global: {
-                        useUTC: false//是否使用世界标准时间  
-                    }
-                });
-
-                // create the chart
-                gameChart = Highcharts.stockChart('gameChart', {
-
-                    rangeSelector: {
-                        selected: 1,
+                rangeSelector: {
+                    selected: 1,
+                    enabled: false
+                },
+                navigator: {
+                    // enabled: false
+                },
+                legend: {
+                    enabled: true,
+                    align: 'left',
+                    verticalAlign: 'top',
+                    floating: true,
+                },
+                plotOptions: {
+                    candlestick: {
+                        color: '#00DD00',
+                        upColor: '#FF0000'
+                    },
+                },
+                xAxis: {
+                    labels: {
                         enabled: false
                     },
-                    navigator: {
-                        // enabled: false
-                    },
-                    legend: {
-                        enabled: true,
-                        align: 'left',
-                        verticalAlign: 'top',
-                        floating: true,
-                        // backgroundColor: '#FFFFFF'
-                    },
-                    plotOptions: {
-                        candlestick: {
-                            color: '#00DD00',
-                            upColor: '#FF0000'
-                        },
-                    },
-                    xAxis: {
-                        labels: {
-                            enabled: false
-                        },
-                    },
-                    yAxis: [{
-                        // y軸 max
-                        max: lastPrMax + 5,
+                },
+                yAxis: [{
+                    // y軸 max
+                    max: lastPrMax + 5,
 
-                        // y軸 min
-                        min: lastPrMin - 5,
+                    // y軸 min
+                    min: lastPrMin - 5,
 
-                        labels: {
-                            align: 'right',
-                            x: -3,
-                            enabled: false
-                        },
-                        title: {
-                            text: '分K',
-                            rotation: 0,
-                            enabled: false
-                        },
-                        height: '80%',
-                        lineWidth: 2,
-                        resize: {
-                            enabled: true
-                        },
-                        plotLines: [{
-                            color: '#00BBFF',
-                            value: ytdClosePrice,
-                            width: 2,
-                        }],
+                    gridLineWidth: 0,
+                    minorGridLineWidth: 0,
+                    labels: {
+                        align: 'right',
+                        x: -3,
+                        enabled: false
                     },
-                    {
-                        labels: {
-                            align: 'right',
-                            x: -3,
-                            enabled: false
-                        },
-                        title: {
-                            text: '及時損益',
-                            rotation: 0,
-                            enabled: false
-                        },
-                        top: '85%',
-                        height: '15%',
-                        offset: 0,
-                        lineWidth: 1
-                    }
-                    ],
-                    tooltip: {
-                        split: true,
-                        // enabled: false
+                    title: {
+                        text: '分K',
+                        rotation: 0,
+                        enabled: false
                     },
-                    series: [{
-                        type: 'candlestick',
-                        name: '分K',
-                        id: 'ohlc',
-                        data: ohlc,
-                        showInLegend: false,
-                        pointRange: 100000,
-                        // pointWidth: 50,
-                        gapSize: 20,
-                        marker: {
-                            enabled: false
-                        }
-                    }, {
-                        type: 'scatter',
-                        name: 'p1TradeIcon',
-                        data: p1TradeIcon,
-                        showInLegend: false,
-                        pointRange: 100000,
-                        // pointWidth: 50,
-                    }, {
-                        type: 'scatter',
-                        name: 'p2TradeIcon',
-                        data: p2TradeIcon,
-                        showInLegend: false,
-                        pointRange: 100000,
-                        // pointWidth: 50,
-                    }, {
-                        type: 'line',
-                        name: '昨收價',
-                        data: ytdClosePr,
-                        showInLegend: true,
+                    height: '80%',
+                    lineWidth: 2,
+                    resize: {
+                        enabled: true
+                    },
+                    plotLines: [{
                         color: '#00BBFF',
+                        value: ytdClosePrice,
                         width: 2,
-                        events: {
-                            legendItemClick: function () {
-                                return false;
-                            }
-                        }
-                    }, {
-                        name: "5MA",
-                        linkedTo: "ohlc",
-                        showInLegend: true,
-                        color: "#FFBB00",
-                        type: "sma",
-                        algorithm: "SMA",
-                        params: {
-                            period: 5
-                        },
-                        marker: {
-                            enabled: false
-                        }
-                    }, {
-                        type: 'line',
-                        name: 'p1及時損益',
-                        data: p1ProfitData,
-                        yAxis: 1,
-                        showInLegend: false,
-                        // pointWidth: 50,
-                        marker: {
-                            enabled: false
-                        }
-                    }, {
-                        type: 'line',
-                        name: 'p2及時損益',
-                        data: p2ProfitData,
-                        yAxis: 1,
-                        showInLegend: false,
-                        // pointWidth: 50,
-                        marker: {
-                            enabled: false
-                        }
-                    }, {
-                        type: 'scatter',
-                        name: 'profitIcon',
-                        data: profitIcon,
-                        showInLegend: false,
-                        yAxis: 1,
                     }],
-                    exporting: {
-                        buttons: {
-                            contextButton: {
-                                enabled: false
-                            },
+                },
+                {
+                    gridLineWidth: 0,
+                    minorGridLineWidth: 0,
+                    labels: {
+                        align: 'right',
+                        x: -3,
+                        enabled: false
+                    },
+                    title: {
+                        text: '及時損益',
+                        rotation: 0,
+                        enabled: false
+                    },
+                    top: '85%',
+                    height: '15%',
+                    offset: 0,
+                    lineWidth: 1
+                }
+                ],
+                tooltip: {
+                    split: true,
+                    // enabled: false
+                },
+                series: [{
+                    type: 'candlestick',
+                    name: '分K',
+                    id: 'ohlc',
+                    data: ohlc,
+                    showInLegend: false,
+                    pointRange: 100000,
+                    gapSize: 20,
+                    marker: {
+                        enabled: false
+                    }
+                }, {
+                    type: 'scatter',
+                    name: 'p1TradeIcon',
+                    data: p1TradeIcon,
+                    showInLegend: false,
+                    pointRange: 100000,
+                }, {
+                    type: 'scatter',
+                    name: 'p2TradeIcon',
+                    data: p2TradeIcon,
+                    showInLegend: false,
+                    pointRange: 100000,
+                }, {
+                    type: 'line',
+                    name: '昨收價',
+                    data: ytdClosePr,
+                    showInLegend: true,
+                    color: '#00BBFF',
+                    width: 2,
+                    events: {
+                        legendItemClick: function () {
+                            return false;
                         }
                     }
-
-                });
+                }, {
+                    name: "5MA",
+                    linkedTo: "ohlc",
+                    showInLegend: true,
+                    color: "#FFBB00",
+                    type: "sma",
+                    algorithm: "SMA",
+                    params: {
+                        period: 5
+                    },
+                    marker: {
+                        enabled: false
+                    }
+                }, {
+                    type: 'line',
+                    name: 'p1及時損益',
+                    data: p1ProfitData,
+                    yAxis: 1,
+                    showInLegend: false,
+                    marker: {
+                        enabled: false
+                    }
+                }, {
+                    type: 'line',
+                    name: 'p2及時損益',
+                    data: p2ProfitData,
+                    yAxis: 1,
+                    showInLegend: false,
+                    marker: {
+                        enabled: false
+                    }
+                }, {
+                    type: 'scatter',
+                    name: 'profitIcon',
+                    data: profitIcon,
+                    showInLegend: false,
+                    yAxis: 1,
+                }],
+                exporting: {
+                    buttons: {
+                        contextButton: {
+                            enabled: false
+                        },
+                    }
+                }
 
             });
-
-
-            // 按下返回首頁
-            $("#backBtn").click(function () {
-                window.location = "lobby.html";
-            });
-
-
-            // 按下再來一場
-            $("#startGameBtn").click(function () {
-                window.location = "competition.html";
-            });
-
-
-            // 取得遊戲損益
-            function getGameDetail(playerID) {
-                let result;
-
-                $.ajax({
-                    url: 'callChartApi.php',
-                    type: 'GET',
-                    async: false,
-                    data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetGameDetail/' + playerID, data: false },
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (response) {
-                        // console.log("response", response);
-                        result = JSON.parse(response);
-                    }
-                })
-
-                return result;
-            }
-
-
-            // 取得遊戲交易結果
-            function getTradeResult(gameID, playerID) {
-                let result;
-
-                $.ajax({
-                    url: 'callChartApi.php',
-                    type: 'GET',
-                    async: false,
-                    data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetTradeResult/' + gameID + "/" + playerID, data: false },
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (response) {
-                        // console.log("response", response);
-                        result = JSON.parse(response);
-                    }
-                })
-
-                return result;
-            }
-
-
-            // 取得期貨資料
-            // @param date 欲取得期貨的日期 YYYY/MM/DD
-            // @return object 期貨資料
-            function getTickData(date) {
-                let result;
-
-                $.ajax({
-                    url: 'callApi.php',
-                    type: 'GET',
-                    async: false,
-                    data: { method: 'GET', url: 'http://192.168.10.148/TickDbData/api/tick/get?time=' + date, data: false },
-                    type: 'GET',
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (response) {
-                        let data = JSON.parse(response);
-                        result = data;
-                    }
-                })
-
-                return result;
-            }
-
-
-            // 取得昨天收盤價
-            // @param date 取得日期 YYYYMMDD
-            // @return 昨收價
-            function getYtdClosePrice(date) {
-
-                let result;
-
-                $.ajax({
-                    url: 'callApi.php',
-                    type: 'GET',
-                    async: false,
-                    data: { method: 'GET', url: 'http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/' + date + '?type=json', data: false },
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (response) {
-                        result = response;
-                    }
-                })
-
-                return result;
-            }
-
-
-            // 取得遊戲交易歷史
-            function getTradeHistory(gameID, playerID) {
-                let result;
-
-                $.ajax({
-                    url: 'callChartApi.php',
-                    type: 'GET',
-                    async: false,
-                    data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetTradeHistory/' + gameID + "/" + playerID, data: false },
-                    error: function (error) {
-                        console.log(error);
-                    },
-                    success: function (response) {
-                        // console.log("response", response);
-                        result = JSON.parse(response);
-                    }
-                })
-
-                return result;
-            }
 
         });
+
+
+        // 取得遊戲損益
+        function getGameDetail(playerID) {
+            let result;
+
+            $.ajax({
+                url: 'callChartApi.php',
+                type: 'GET',
+                async: false,
+                data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetGameDetail/' + playerID, data: false },
+                error: function (error) {
+                    console.log(error);
+                },
+                success: function (response) {
+                    // console.log("response", response);
+                    result = JSON.parse(response);
+                }
+            })
+
+            return result;
+        }
+
+
+        // 取得遊戲交易結果
+        function getTradeResult(gameID, playerID) {
+            let result;
+
+            $.ajax({
+                url: 'callChartApi.php',
+                type: 'GET',
+                async: false,
+                data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetTradeResult/' + gameID + "/" + playerID, data: false },
+                error: function (error) {
+                    console.log(error);
+                },
+                success: function (response) {
+                    // console.log("response", response);
+                    result = JSON.parse(response);
+                }
+            })
+
+            return result;
+        }
+
+
+        // 取得期貨資料
+        // @param date 欲取得期貨的日期 YYYY/MM/DD
+        // @return object 期貨資料
+        function getTickData(date) {
+            let result;
+
+            $.ajax({
+                url: 'callApi.php',
+                type: 'GET',
+                async: false,
+                data: { method: 'GET', url: 'http://192.168.10.148/TickDbData/api/tick/get?time=' + date, data: false },
+                type: 'GET',
+                error: function (error) {
+                    console.log(error);
+                },
+                success: function (response) {
+                    let data = JSON.parse(response);
+                    result = data;
+                }
+            })
+
+            return result;
+        }
+
+
+        // 取得昨天收盤價
+        // @param date 取得日期 YYYYMMDD
+        // @return 昨收價
+        function getYtdClosePrice(date) {
+            let result;
+
+            $.ajax({
+                url: 'callApi.php',
+                type: 'GET',
+                async: false,
+                data: { method: 'GET', url: 'http://192.168.10.148/TickDbDataII/api/TWPoint/RefrencePrice/' + date + '?type=json', data: false },
+                error: function (error) {
+                    console.log(error);
+                },
+                success: function (response) {
+                    result = response;
+                }
+            })
+
+            return result;
+        }
+
+
+        // 取得遊戲交易歷史
+        function getTradeHistory(gameID, playerID) {
+            let result;
+
+            $.ajax({
+                url: 'callChartApi.php',
+                type: 'GET',
+                async: false,
+                data: { method: 'GET', url: 'http://192.168.10.148/ChartGame/api/GameInfo/GetTradeHistory/' + gameID + "/" + playerID, data: false },
+                error: function (error) {
+                    console.log(error);
+                },
+                success: function (response) {
+                    // console.log("response", response);
+                    result = JSON.parse(response);
+                }
+            })
+
+            return result;
+        }
 
     </script>
 
@@ -765,8 +774,6 @@
         <div>
             <input type="button" id="backBtn" value="返回">
             <br>
-            <input type="button" id="gameResultBtn" value="遊戲結果">
-            <input type="button" id="tradeRecordBtn" value="下單紀錄">
         </div>
 
         <!-- 遊戲結果 -->
@@ -780,7 +787,7 @@
                 <div style="width:50%;float:left">
                     <p>成交口數 <span id="totalLot"></span></p>
                     <p>賺錢口佔比</p>
-                    <div id="gainRate" style="width:35%" data-dimension="250" data-info="New Clients" data-width="30"
+                    <div id="gainRate" style="width:25%" data-dimension="250" data-info="New Clients" data-width="30"
                         data-fontsize="38" data-fgcolor="#61a9dc" data-bgcolor="#eee" data-fill="#ddd">
                     </div>
                     <p>獲利口平均賺 <span id="avgGainLot"></span>點</p>
